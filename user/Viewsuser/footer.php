@@ -7,20 +7,20 @@
     <!-- Cột 1: Thông tin khách sạn -->
     <div class="footer-col">
       <h3>THE GRAND ELEGANCE HOTEL</h3>
-      <p>📍 123 Luxury Street, Ha Noi, Viet Nam</p>
-      <p>📞 +84 123 456 789</p>
-      <p>✉ info@greatmissionhotel.com</p>
+      <p>📍 The Grand Elegance Hotel, 32 Lò Sũ, Hoàn Kiếm, Hà Nội</p>
+      <p>📞 +84 24 3935 1632</p>
+      <p>✉  info@theelghotel.com</p>
     </div>
 
     <!-- Cột 2: Liên kết nhanh -->
     <div class="footer-col">
       <h4>Quick Links</h4>
       <ul>
-        <li><a href="trangchu.php"> Trang chủ </a></li>
-        <li><a href="#">Đặt phòng </a></li>
-        <li><a href="#">Ăn uống & sự kiện </a></li>
-        <li><a href="#">Spa & Sức khỏe </a></li>
-        <li><a href="#">Liên lạc </a></li>
+        <li><a href="/doanqlks/user/Viewsuser/trangchu.php"> Trang chủ </a></li>
+        <li><a href="/doanqlks/user/Viewsuser/Datphong.php">Đặt phòng </a></li>
+        <li><a href="/doanqlks/user/Viewsuser/dichvu.php">Dịch Vụ </a></li>
+        <li><a href="/doanqlks/user/Viewsuser/Lienlac.php">Spa & Liên lạc </a></li>
+  
       </ul>
     </div>
 

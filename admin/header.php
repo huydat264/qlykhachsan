@@ -1,47 +1,91 @@
 <?php
 // header.php
+session_start();
+// Lấy tên trang hiện tại để làm nổi bật nút Trang chủ
+$current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <header>
-  <div class="logo">THE GRAND ELEGANCE HOTEL</div>
-  <nav>
-    <a href="index.php">Trang chủ</a>
-    <a href="phong.php">Quản lý phòng</a>
-    <a href="dichvu.php">Quản lý dịch vụ</a>
-    <a href="khachhang.php">Quản lý khách hàng</a>
-    <a href="nhanvien.php">Quản lý nhân viên</a>
-    <a href="baocao.php">Báo cáo thống kê</a>
-  </nav>
+ <div class="logo">THE GRAND ELEGANCE HOTEL</div>
+ <nav> <a href="index.php" class="nav-button <?= ($current_page == 'index.php') ? 'active-button' : '' ?>">Trang chủ</a>
+ </nav>
+ <div class="user-info">
+ <?php if (isset($_SESSION['user_name'])): ?>
+ <span style="margin-right: 15px; color: #ffcc00; font-weight: bold;">Chào, <?= htmlspecialchars($_SESSION['user_name']) ?></span>
+ <a href="logout.php" class="logout-button">Đăng xuất</a>
+ <?php else: ?>
+ <a href="login.php" class="login-button">Đăng nhập</a>
+ <?php endif; ?>
+ </div>
 </header>
 
 <style>
-  header {
-    background: #002060;
-    color: #fff;
-    padding: 15px 50px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 999;
+ body {
+ margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ }
+
+ header {
+ background: #002060;
+ color: #fff;
+ padding: 15px 30px; display: flex;
+ justify-content: space-between;
+ align-items: center;
+ position: sticky;
+ top: 0;
+ z-index: 999;
+ }
+
+ header .logo {
+ font-size: 22px;
+ font-weight: bold;
+ letter-spacing: 1px;
+ white-space: nowrap;
+ }
+
+ nav {
+ display: flex;
+ flex-wrap: nowrap;
+ margin: 0 10px;
+ }
+
+ .nav-button {
+ color: #fff;
+ text-decoration: none;
+ margin: 0 8px;
+ font-weight: 500;
+ transition: color 0.3s, background-color 0.3s;
+ padding: 8px 12px;
+ border-radius: 6px;
+ white-space: nowrap;
+ }
+ 
+ .nav-button:hover {
+ background-color: rgba(255, 255, 255, 0.2);
+ }
+  
+  .active-button {
+    background-color: #c77992ff;
+    color: #002060;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
-  header .logo {
-    font-size: 22px;
-    font-weight: bold;
-    letter-spacing: 1px;
-  }
+ .user-info {
+ display: flex;
+ align-items: center;
+ white-space: nowrap;
+ }
 
-  nav a {
-    color: #fff;
-    text-decoration: none;
-    margin: 0 12px;
-    font-weight: 500;
-    transition: color 0.3s;
-  }
+ .login-button, .logout-button {
+ background-color: #ffcc00;
+ color: #002060;
+ padding: 8px 15px;
+ text-decoration: none;
+ border-radius: 6px;
+ font-weight: bold;
+ transition: background-color 0.3s, transform 0.2s;
+ }
 
-  nav a:hover {
-    text-decoration: underline;
-    color: #ffcc00;
-  }
+ .login-button:hover, .logout-button:hover {
+ background-color: #e6b800;
+ transform: translateY(-2px);
+ }
 </style>

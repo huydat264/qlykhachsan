@@ -3,7 +3,20 @@ require_once __DIR__ . "/../includes/db.php";
 require_once __DIR__ . "/../Modeluser/DatPhongModel.php";
 
 $model = new DatPhongModel($conn);
-$datPhong = $model->getById($_GET['id_datphong']);
+
+// Lấy id từ URL (có thì dùng, không thì null)
+$id_datphong = $_GET['id_datphong'] ?? null;
+
+if (!$id_datphong) {
+    echo "<script>alert('Thiếu mã đặt phòng!'); window.location.href='danhsachphong.php';</script>";
+    exit;
+}
+
+$datPhong = $model->getById($id_datphong);
+if (!$datPhong) {
+    echo "<script>alert('Không tìm thấy dữ liệu đặt phòng!'); window.location.href='danhsachphong.php';</script>";
+    exit;
+}
 
 $ngayNhan = new DateTime($datPhong['ngay_nhan']);
 $ngayTra  = new DateTime($datPhong['ngay_tra']);
@@ -95,7 +108,7 @@ $tongTien = $soNgay * $datPhong['gia_phong'];
       <p><button onclick="copyAmount()">Copy số tiền</button></p>
     </div>
 
-    <a href="index.php" class="btn-back">Quay lại trang chủ</a>
+    <a href="trangchu.php" class="btn-back">Quay lại trang chủ</a>
   </div>
 </body>
 </html>

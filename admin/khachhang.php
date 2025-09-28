@@ -1,26 +1,14 @@
-=<?php
+<?php
 include 'header.php';
 include 'db.php';
+include 'auth.php'; // Gọi file auth
+require_login();    // Khóa trang, yêu cầu đăng nhập
+check_permission(['ADMIN', 'NHANVIEN']); // Cả 2 role đều được vào
 
-// Các hàm trợ giúp
-function get_columns($conn, $table) {
-    $cols = [];
-    $res = $conn->query("SHOW COLUMNS FROM `$table`");
-    if ($res === false) return false;
-    while ($r = $res->fetch_assoc()) $cols[] = $r['Field'];
-    return $cols;
-}
-
-$table = 'KhachHang';
-$cols = get_columns($conn, $table);
-if ($cols === false) {
-    echo "<p style='color:red'>Bảng <strong>$table</strong> không tồn tại. Lỗi MySQL: " . $conn->error . "</p>";
-    include 'footer.php'; exit;
-}
-
-// Cột DB
-$id_col = 'id';
-$tai_khoan_id_col = 'tai_khoan_id';
+// Cấu hình bảng và cột
+$table = 'khachhang';
+$id_col = 'id_khachhang';
+$tai_khoan_id_col = 'tai_khoan_khachhang_id';
 $full_name_col = 'ho_ten';
 $phone_number_col = 'so_dien_thoai';
 $email_col = 'email';
@@ -29,215 +17,161 @@ $ngay_sinh_col = 'ngay_sinh';
 $gioi_tinh_col = 'gioi_tinh';
 $cccd_col = 'cccd';
 
-// Thêm khách hàng
+// ================== XỬ LÝ THÊM ==================
 if (isset($_POST['them'])) {
-    $tai_khoan_id = (int)$_POST['tai_khoan_id'];
-    $ho_ten = $conn->real_escape_string($_POST['ho_ten']);
-    $so_dien_thoai = $conn->real_escape_string($_POST['so_dien_thoai']);
-    $email = $conn->real_escape_string($_POST['email']);
-    $ngay_sinh = !empty($_POST['ngay_sinh']) ? $_POST['ngay_sinh'] : NULL;
-    $gioi_tinh = !empty($_POST['gioi_tinh']) ? $_POST['gioi_tinh'] : NULL;
-    $cccd = !empty($_POST['cccd']) ? $_POST['cccd'] : NULL;
-    $dia_chi = !empty($_POST['dia_chi']) ? $_POST['dia_chi'] : NULL;
+    $tai_khoan_id = !empty($_POST[$tai_khoan_id_col]) ? (int)$_POST[$tai_khoan_id_col] : NULL;
+    $ho_ten = $_POST[$full_name_col];
+    $so_dien_thoai = $_POST[$phone_number_col];
+    $email = $_POST[$email_col];
+    $ngay_sinh = !empty($_POST[$ngay_sinh_col]) ? $_POST[$ngay_sinh_col] : NULL;
+    $gioi_tinh = !empty($_POST[$gioi_tinh_col]) ? $_POST[$gioi_tinh_col] : NULL;
+    $cccd = !empty($_POST[$cccd_col]) ? $_POST[$cccd_col] : NULL;
+    $dia_chi = !empty($_POST[$address_col]) ? $_POST[$address_col] : NULL;
 
-    $sql = "INSERT INTO `KhachHang` 
-            (`tai_khoan_id`, `ho_ten`, `so_dien_thoai`, `email`, `ngay_sinh`, `gioi_tinh`, `cccd`, `dia_chi`) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO `$table` 
+        (`$tai_khoan_id_col`, `$full_name_col`, `$phone_number_col`, `$email_col`, `$ngay_sinh_col`, `$gioi_tinh_col`, `$cccd_col`, `$address_col`) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("isssssss", $tai_khoan_id, $ho_ten, $so_dien_thoai, $email, $ngay_sinh, $gioi_tinh, $cccd, $dia_chi);
+
     if ($stmt->execute()) {
         echo "<script>alert('Thêm khách hàng thành công!');window.location='khachhang.php';</script>";
         exit;
     } else {
-        echo "<p style='color:red'>Lỗi thêm: " . $stmt->error . "</p>";
+        echo "<p style='color:red'>Lỗi khi thêm: " . $stmt->error . "</p>";
     }
     $stmt->close();
 }
 
-// Sửa khách hàng
-if (isset($_POST['luu'])) {
-    $id = (int)$_POST['id'];
-    $ho_ten = $conn->real_escape_string($_POST['ho_ten']);
-    $so_dien_thoai = $conn->real_escape_string($_POST['so_dien_thoai']);
-    $email = $conn->real_escape_string($_POST['email']);
-    $ngay_sinh = !empty($_POST['ngay_sinh']) ? $_POST['ngay_sinh'] : NULL;
-    $gioi_tinh = !empty($_POST['gioi_tinh']) ? $_POST['gioi_tinh'] : NULL;
-    $cccd = !empty($_POST['cccd']) ? $_POST['cccd'] : NULL;
-    $dia_chi = !empty($_POST['dia_chi']) ? $_POST['dia_chi'] : NULL;
+// ================== XỬ LÝ SỬA ==================
+$edit_data = null;
+if (isset($_GET['sua'])) {
+    $id_edit = (int)$_GET['sua'];
+    $sql_edit = "SELECT * FROM `$table` WHERE `$id_col`=?";
+    $stmt = $conn->prepare($sql_edit);
+    $stmt->bind_param("i", $id_edit);
+    $stmt->execute();
+    $result_edit = $stmt->get_result();
+    $edit_data = $result_edit->fetch_assoc();
+    $stmt->close();
+}
 
-    $sql = "UPDATE `KhachHang` 
-            SET `ho_ten`=?, `so_dien_thoai`=?, `email`=?, `ngay_sinh`=?, `gioi_tinh`=?, `cccd`=?, `dia_chi`=? 
-            WHERE `id`=?";
+if (isset($_POST['capnhat'])) {
+    $id_update = (int)$_POST[$id_col];
+    $tai_khoan_id = !empty($_POST[$tai_khoan_id_col]) ? (int)$_POST[$tai_khoan_id_col] : NULL;
+    $ho_ten = $_POST[$full_name_col];
+    $so_dien_thoai = $_POST[$phone_number_col];
+    $email = $_POST[$email_col];
+    $ngay_sinh = !empty($_POST[$ngay_sinh_col]) ? $_POST[$ngay_sinh_col] : NULL;
+    $gioi_tinh = !empty($_POST[$gioi_tinh_col]) ? $_POST[$gioi_tinh_col] : NULL;
+    $cccd = !empty($_POST[$cccd_col]) ? $_POST[$cccd_col] : NULL;
+    $dia_chi = !empty($_POST[$address_col]) ? $_POST[$address_col] : NULL;
+
+    $sql = "UPDATE `$table` SET 
+        `$tai_khoan_id_col`=?, `$full_name_col`=?, `$phone_number_col`=?, `$email_col`=?, 
+        `$ngay_sinh_col`=?, `$gioi_tinh_col`=?, `$cccd_col`=?, `$address_col`=? 
+        WHERE `$id_col`=?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssssi", $ho_ten, $so_dien_thoai, $email, $ngay_sinh, $gioi_tinh, $cccd, $dia_chi, $id);
+    $stmt->bind_param("isssssssi", $tai_khoan_id, $ho_ten, $so_dien_thoai, $email, $ngay_sinh, $gioi_tinh, $cccd, $dia_chi, $id_update);
+
     if ($stmt->execute()) {
-        echo "<script>alert('Cập nhật thành công!');window.location='khachhang.php';</script>";
+        echo "<script>alert('Cập nhật khách hàng thành công!');window.location='khachhang.php';</script>";
         exit;
     } else {
-        echo "<p style='color:red'>Lỗi cập nhật: " . $stmt->error . "</p>";
+        echo "<p style='color:red'>Lỗi khi cập nhật: " . $stmt->error . "</p>";
     }
     $stmt->close();
 }
 
-// Xóa khách hàng
-if (isset($_GET['xoa'])) {
-    $id = (int)$_GET['xoa'];
-    $conn->query("DELETE FROM `KhachHang` WHERE `id`=$id");
-    header("Location: khachhang.php"); exit;
-}
-
-// Tìm kiếm
+// ================== TÌM KIẾM ==================
 $search = '';
 $where = '';
+$params = [];
 if (isset($_POST['timkiem'])) {
-    $search = $conn->real_escape_string($_POST['search']);
-    $where_parts = [];
-    if (in_array($full_name_col, $cols)) $where_parts[] = "`$full_name_col` LIKE '%$search%'";
-    if (in_array($phone_number_col, $cols)) $where_parts[] = "`$phone_number_col` LIKE '%$search%'";
-    if (in_array($email_col, $cols)) $where_parts[] = "`$email_col` LIKE '%$search%'";
-    if (in_array($address_col, $cols)) $where_parts[] = "`$address_col` LIKE '%$search%'";
-    $where = $where_parts ? "WHERE " . implode(' OR ', $where_parts) : '';
+    $search = $_POST['search'];
+    $where = "WHERE `$full_name_col` LIKE ? OR `$phone_number_col` LIKE ? OR `$email_col` LIKE ? OR `$address_col` LIKE ?";
+    $params = ['ssss', '%' . $search . '%', '%' . $search . '%', '%' . $search . '%', '%' . $search . '%'];
 }
-$result = $conn->query("SELECT * FROM `$table` $where");
-$edit_id = isset($_GET['edit']) ? $_GET['edit'] : null;
+
+$sql_select = "SELECT * FROM `$table` " . $where;
+$stmt = $conn->prepare($sql_select);
+if (isset($_POST['timkiem'])) {
+    $stmt->bind_param(...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 ?>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
-body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background:#f4f6f9;
-    margin:0;
-}
-.container { max-width:1200px; margin:20px auto; padding:20px; }
-.page-title { font-size:24px; font-weight:bold; color:#002060; margin-bottom:20px; border-left:6px solid #002060; padding-left:10px; }
-
-.card {
-    background:#fff;
-    padding:20px;
-    border-radius:12px; /* bo góc */
-    margin-bottom:20px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow:0 6px 16px rgba(0,0,0,0.15);
-}
-
-.card h3 { margin-top:0; margin-bottom:15px; color:#444; }
-
-.search-box { text-align:right; margin-bottom:15px; }
-.search-box input {
-    padding:10px 14px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    width:250px;
-    transition:border-color 0.2s ease;
-}
-.search-box input:focus {
-    outline:none;
-    border-color:#002060;
-}
-.search-box button {
-    padding:10px 16px;
-    background:#002060;
-    border:none;
-    color:#fff;
-    border-radius:8px;
-    cursor:pointer;
-    margin-left:6px;
-    transition:background 0.2s ease;
-}
-.search-box button:hover { background:#003399; }
-
-.grid-form {
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:12px;
-}
-.grid-form input, .grid-form select {
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    transition:border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.grid-form input:focus, .grid-form select:focus {
-    outline:none;
-    border-color:#007bff;
-    box-shadow:0 0 4px rgba(0,123,255,0.3);
-}
-.form-actions { grid-column:1/-1; text-align:right; }
-
-.btn {
-    padding:8px 14px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    text-decoration:none;
-    font-size:14px;
-    transition:background 0.2s ease, transform 0.1s ease;
-}
-.btn:active { transform: scale(0.96); }
-.btn-primary { background:#007bff; color:#fff; }
-.btn-success { background:#28a745; color:#fff; }
-.btn-danger { background:#dc3545; color:#fff; }
-.btn-light { background:#e0e0e0; color:#333; }
-.btn:hover { opacity:0.9; }
-
-.data-table { width:100%; border-collapse:collapse; margin-top:10px; border-radius:12px; overflow:hidden; }
-.data-table th {
-    background:#002060;
-    color:#fff;
-    padding:12px;
-    text-align:center;
-}
-.data-table td {
-    border:1px solid #ddd;
-    padding:10px;
-    text-align:center;
-    background:#fff;
-}
-.data-table tr:nth-child(even) { background:#f9f9f9; }
-.data-table tr:hover { background:#eef3ff; transition:background 0.2s ease; }
+    body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9; margin: 0; padding: 0;}
+    .container {padding: 30px; max-width: 1400px; margin: 0 auto;}
+    .header-container {display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 25px;}
+    .main-title {color: #1d4d84; font-size: 2.2rem; font-weight: 600; text-transform: uppercase; margin: 0;}
+    .search-form {display: flex; gap: 10px; align-items: center;}
+    .search-form input {width: 300px; padding: 10px 15px; border: 1px solid #ced4da; border-radius: 25px;}
+    .search-form button {padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: 600;}
+    .form-box {background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); margin-bottom: 30px;}
+    .form-box h3 {color: #1d4d84; margin-top: 0; font-size: 1.5rem; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;}
+    .form-row {display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;}
+    .form-row input, .form-row select {width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 8px;}
+    .form-actions {display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;}
+    .form-actions button {padding: 12px 25px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; color: #fff;}
+    .btn-them {background-color: #28a745;} .btn-them:hover {background-color: #218838;}
+    .btn-capnhat {background-color: #ffc107; color: #000;} .btn-capnhat:hover {background-color: #e0a800;}
+    table {width: 100%; border-collapse: collapse; background-color: #fff; border-radius: 12px; overflow: hidden; margin-top: 20px;}
+    th, td {padding: 15px; border-bottom: 1px solid #dee2e6;}
+    th {background-color: #1d4d84; color: #fff; text-transform: uppercase;}
+    tr:nth-child(even) {background-color: #f9fbfd;} tr:hover {background-color: #eaf3fd;}
+    .action-btn {display: inline-block; padding: 6px 12px; border-radius: 6px; background-color: #ffc107; color: #000; font-weight: 600; text-decoration: none;}
+    .action-btn:hover {background-color: #e0a800;}
 </style>
 
-
 <main class="container">
-    <h2 class="page-title">Quản lý Khách hàng</h2>
+    <div class="header-container">
+        <h2 class="main-title">Quản lý Khách hàng</h2>
+        <form method="post" class="search-form">
+            <input type="text" name="search" placeholder="Tìm kiếm theo họ tên, SĐT..." value="<?= htmlspecialchars($search) ?>">
+            <button type="submit" name="timkiem"><i class="fas fa-search"></i> Tìm</button>
+        </form>
+    </div>
 
-    <!-- Tìm kiếm -->
-    <form method="post" class="search-box">
-        <input type="text" name="search" placeholder="🔍 Tìm kiếm khách hàng..." value="<?= htmlspecialchars($search) ?>">
-        <button type="submit" name="timkiem">Tìm</button>
-    </form>
-
-    <!-- Form thêm -->
-    <div class="card">
-        <h3>➕ Thêm khách hàng mới</h3>
-        <form method="post" class="grid-form">
-            <input type="number" name="tai_khoan_id" placeholder="ID tài khoản" required>
-            <input type="text" name="ho_ten" placeholder="Họ tên" required>
-            <input type="date" name="ngay_sinh">
-            <select name="gioi_tinh">
-                <option value="">Giới tính</option>
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
-            </select>
-            <input type="text" name="so_dien_thoai" placeholder="Số điện thoại" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="text" name="cccd" placeholder="CCCD">
-            <input type="text" name="dia_chi" placeholder="Địa chỉ">
+    <!-- Form thêm / sửa khách hàng -->
+    <div class="form-box">
+        <h3><i class="fas fa-user-plus"></i> <?= $edit_data ? "Sửa Khách hàng" : "Thêm Khách hàng Mới" ?></h3>
+        <form method="post">
+            <?php if ($edit_data): ?>
+                <input type="hidden" name="<?= $id_col ?>" value="<?= $edit_data[$id_col] ?>">
+            <?php endif; ?>
+            <div class="form-row">
+                <input type="number" name="<?= $tai_khoan_id_col ?>" placeholder="ID tài khoản" value="<?= $edit_data[$tai_khoan_id_col] ?? '' ?>">
+                <input type="text" name="<?= $full_name_col ?>" placeholder="Họ tên" value="<?= $edit_data[$full_name_col] ?? '' ?>" required>
+                <input type="date" name="<?= $ngay_sinh_col ?>" value="<?= $edit_data[$ngay_sinh_col] ?? '' ?>">
+                <select name="<?= $gioi_tinh_col ?>">
+                    <option value="">Giới tính</option>
+                    <option value="Nam" <?= ($edit_data && $edit_data[$gioi_tinh_col]=='Nam')?'selected':'' ?>>Nam</option>
+                    <option value="Nữ" <?= ($edit_data && $edit_data[$gioi_tinh_col]=='Nữ')?'selected':'' ?>>Nữ</option>
+                    <option value="Khác" <?= ($edit_data && $edit_data[$gioi_tinh_col]=='Khác')?'selected':'' ?>>Khác</option>
+                </select>
+                <input type="text" name="<?= $phone_number_col ?>" placeholder="Số điện thoại" value="<?= $edit_data[$phone_number_col] ?? '' ?>" required>
+                <input type="email" name="<?= $email_col ?>" placeholder="Email" value="<?= $edit_data[$email_col] ?? '' ?>">
+                <input type="text" name="<?= $cccd_col ?>" placeholder="CCCD" value="<?= $edit_data[$cccd_col] ?? '' ?>">
+                <input type="text" name="<?= $address_col ?>" placeholder="Địa chỉ" value="<?= $edit_data[$address_col] ?? '' ?>">
+            </div>
             <div class="form-actions">
-                <button type="submit" name="them" class="btn btn-success">Thêm</button>
+                <?php if ($edit_data): ?>
+                    <button type="submit" name="capnhat" class="btn-capnhat"><i class="fas fa-save"></i> Cập nhật</button>
+                <?php else: ?>
+                    <button type="submit" name="them" class="btn-them"><i class="fas fa-plus-circle"></i> Thêm</button>
+                <?php endif; ?>
             </div>
         </form>
     </div>
 
-    <!-- Danh sách -->
-    <div class="card">
-        <h3>📋 Danh sách khách hàng</h3>
-        <table class="data-table">
+    <!-- Bảng danh sách khách hàng -->
+    <table>
+        <thead>
             <tr>
                 <th>ID</th>
                 <th>ID Tài khoản</th>
@@ -250,49 +184,34 @@ body {
                 <th>Địa chỉ</th>
                 <th>Hành động</th>
             </tr>
-            <?php while ($row = $result->fetch_assoc()) { ?>
+        </thead>
+        <tbody>
+            <?php if ($result->num_rows > 0): ?>
+                <?php while ($row = $result->fetch_assoc()) { ?>
                 <tr>
-                <?php if ($edit_id == $row['id']) { ?>
-                    <form method="post">
-                        <td><?= $row['id'] ?><input type="hidden" name="id" value="<?= $row['id'] ?>"></td>
-                        <td><?= $row['tai_khoan_id'] ?></td>
-                        <td><input type="text" name="ho_ten" value="<?= htmlspecialchars($row['ho_ten']) ?>"></td>
-                        <td><input type="date" name="ngay_sinh" value="<?= htmlspecialchars($row['ngay_sinh']) ?>"></td>
-                        <td>
-                            <select name="gioi_tinh">
-                                <option value="Nam" <?= ($row['gioi_tinh']=='Nam')?'selected':'' ?>>Nam</option>
-                                <option value="Nữ" <?= ($row['gioi_tinh']=='Nữ')?'selected':'' ?>>Nữ</option>
-                                <option value="Khác" <?= ($row['gioi_tinh']=='Khác')?'selected':'' ?>>Khác</option>
-                            </select>
-                        </td>
-                        <td><input type="text" name="so_dien_thoai" value="<?= htmlspecialchars($row['so_dien_thoai']) ?>"></td>
-                        <td><input type="email" name="email" value="<?= htmlspecialchars($row['email']) ?>"></td>
-                        <td><input type="text" name="cccd" value="<?= htmlspecialchars($row['cccd']) ?>"></td>
-                        <td><input type="text" name="dia_chi" value="<?= htmlspecialchars($row['dia_chi']) ?>"></td>
-                        <td>
-                            <button type="submit" name="luu" class="btn btn-primary">Lưu</button>
-                            <a href="khachhang.php" class="btn btn-light">Hủy</a>
-                        </td>
-                    </form>
-                <?php } else { ?>
-                    <td><?= $row['id'] ?></td>
-                    <td><?= $row['tai_khoan_id'] ?></td>
-                    <td><?= htmlspecialchars($row['ho_ten']) ?></td>
-                    <td><?= htmlspecialchars($row['ngay_sinh']) ?></td>
-                    <td><?= htmlspecialchars($row['gioi_tinh']) ?></td>
-                    <td><?= htmlspecialchars($row['so_dien_thoai']) ?></td>
-                    <td><?= htmlspecialchars($row['email']) ?></td>
-                    <td><?= htmlspecialchars($row['cccd']) ?></td>
-                    <td><?= htmlspecialchars($row['dia_chi']) ?></td>
+                    <td><?= htmlspecialchars($row[$id_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$tai_khoan_id_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$full_name_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$ngay_sinh_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$gioi_tinh_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$phone_number_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$email_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$cccd_col]) ?></td>
+                    <td><?= htmlspecialchars($row[$address_col]) ?></td>
                     <td>
-                        <a href="?edit=<?= $row['id'] ?>" class="btn btn-primary">Sửa</a>
-                        <a href="?xoa=<?= $row['id'] ?>" onclick="return confirm('Xóa khách hàng này?')" class="btn btn-danger">Xóa</a>
+                        <a class="action-btn" href="khachhang.php?sua=<?= $row[$id_col] ?>">
+                            <i class="fas fa-edit"></i> Sửa
+                        </a>
                     </td>
-                <?php } ?>
                 </tr>
-            <?php } ?>
-        </table>
-    </div>
+                <?php } ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="10" style="text-align: center;">Không tìm thấy khách hàng nào.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
 </main>
 
 <?php include 'footer.php'; ?>

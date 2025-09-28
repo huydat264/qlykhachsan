@@ -46,4 +46,23 @@ class DatPhongModel {
         $stmt->execute();
         return $stmt->get_result()->fetch_assoc();
     }
+
+    // ✅ Lấy danh sách phòng đã đặt theo khách hàng
+    public function getByKhachHang($id_khachhang) {
+        $sql = "SELECT d.*, p.so_phong, p.loai_phong, p.gia_phong
+                FROM datphong d
+                JOIN phong p ON d.id_phong = p.id_phong
+                WHERE d.id_khachhang = ?
+                ORDER BY d.ngay_dat DESC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $id_khachhang);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        return $data;
+    }
 }

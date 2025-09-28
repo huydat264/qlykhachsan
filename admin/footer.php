@@ -2,52 +2,6 @@
 // footer.php
 ?>
 <footer>
-  <div class="footer-container">
-    
-    <!-- Cột 1: Thông tin khách sạn -->
-    <div class="footer-col">
-      <h3>THE GRAND ELEGANCE HOTEL</h3>
-      <p>📍 123 Luxury Street, Ha Noi, Viet Nam</p>
-      <p>📞 +84 123 456 789</p>
-      <p>✉ info@greatmissionhotel.com</p>
-    </div>
-
-    <!-- Cột 2: Liên kết nhanh -->
-    <div class="footer-col">
-      <h4>Quick Links</h4>
-      <ul>
-        <li><a href="trangchu.php"> Trang chủ </a></li>
-        <li><a href="#">Đặt phòng </a></li>
-        <li><a href="#">Ăn uống & sự kiện </a></li>
-        <li><a href="#">Spa & Sức khỏe </a></li>
-        <li><a href="#">Liên lạc </a></li>
-      </ul>
-    </div>
-
-    <!-- Cột 3: Mạng xã hội -->
-    <div class="footer-col">
-      <h4>Follow Us</h4>
-      <div class="social-icons">
-        <a href="#"><i>🌐</i></a>
-        <a href="#"><i>🐦</i></a>
-        <a href="#"><i>📷</i></a>
-        <a href="#"><i>📌</i></a>
-      </div>
-    </div>
-
-    <!-- Cột 4: Thanh toán -->
-    <div class="footer-col">
-      <h4>We Accept</h4>
-      <div class="payment-icons">
-        <img src="https://i.ibb.co/4JybxQJ/paypal.png" alt="PayPal">
-        <img src="https://i.ibb.co/nQGh0pB/visa.png" alt="Visa">
-        <img src="https://i.ibb.co/YbJX2wv/mastercard.png" alt="MasterCard">
-        <img src="https://i.ibb.co/kQ2wvPX/amex.png" alt="Amex">
-      </div>
-    </div>
-
-  </div>
-
   <div class="footer-bottom">
     <p>© 2025 THE GRAND ELEGANCE HOTEL. All rights reserved.</p>
   </div>
