@@ -35,7 +35,7 @@ include 'header.php';
       margin-bottom:18px;
       padding:30px;
       border-radius:12px;
-      background: url('images/contact-bg.jpg') no-repeat center/cover; /* 👉 Thay ảnh ở đây */
+      background: url('https://masterisevietnam.com/wp-content/uploads/2021/05/thiet-ke-sanh.jpg.webp') no-repeat center/cover; /* 👉 Thay ảnh ở đây */
       color:white;
     }
     .contact-logo{

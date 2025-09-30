@@ -1,49 +1,4 @@
-<?php
-include 'header.php';
-include 'db.php';
-include 'auth.php'; // Gọi file auth
-require_login();    // Khóa trang, yêu cầu đăng nhập
-check_permission(['ADMIN', 'NHANVIEN']); // Cả 2 role đều được vào
-
-// Cấu hình mysqli để báo cáo ngoại lệ
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-
-// Lấy danh sách các phòng có trạng thái 'Đã đặt' và tính tổng tiền dịch vụ
-$sql_phong_list = "
-    SELECT 
-        p.id_phong,
-        p.so_phong,
-        p.gia_phong,
-        COALESCE(SUM(sdv.thanh_tien), 0) AS tong_tien_dichvu,
-        dp.id_datphong
-    FROM 
-        phong p
-    LEFT JOIN 
-        datphong dp ON p.id_phong = dp.id_phong
-    LEFT JOIN 
-        sudungdichvu sdv ON dp.id_datphong = sdv.id_datphong
-    WHERE 
-        LOWER(TRIM(p.trang_thai)) = 'đã đặt' AND dp.id_datphong IS NOT NULL
-    GROUP BY
-        p.id_phong, p.so_phong, p.gia_phong, dp.id_datphong
-";
-
-$phong_list = [];
-try {
-    $stmt = $conn->prepare($sql_phong_list);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        // Tính tổng tiền cuối cùng
-        $row['tong_tien_phai_tra'] = $row['gia_phong'] + $row['tong_tien_dichvu'];
-        $phong_list[] = $row;
-    }
-    $stmt->close();
-} catch (mysqli_sql_exception $e) {
-    echo "<p style='color:red'>Lỗi truy vấn: " . $e->getMessage() . "</p>";
-}
-
-?>
+<?php include __DIR__ . '/layouts/header.php'; ?>
 
 <style>
     /* Reset và cấu hình cơ bản */
@@ -136,7 +91,7 @@ try {
         padding: 15px;
         border: none;
         border-radius: 8px;
-        background-color: #28a745;
+        background-color: #116e8eff;
         color: white;
         font-size: 18px;
         font-weight: 600;
@@ -146,7 +101,7 @@ try {
     }
 
     .form-actions button:hover {
-        background-color: #218838;
+        background-color: #20a7e0ff;
         transform: translateY(-2px);
     }
 
@@ -158,7 +113,8 @@ try {
 
 <div class="container">
     <h2>Thanh toán</h2>
-    <form method="post" action="process_payment.php">
+  <form method="post" action="index.php?controller=process_payment&action=store">
+
         <div class="form-group">
             <label for="id_phong">Chọn phòng:</label>
             <select id="id_phong" name="id_phong" required onchange="updatePrice()">
@@ -233,18 +189,15 @@ try {
             const totalPrice = selectedOption.getAttribute('data-total-price');
             const idDatphong = selectedOption.getAttribute('data-id-datphong');
             
-            // Cập nhật trường giá trị chính
             priceInput.value = formatCurrency(totalPrice);
             idDatphongInput.value = idDatphong;
 
-            // Hiển thị và cập nhật tóm tắt chi phí
             summaryDiv.style.display = 'block';
             document.getElementById('summary-so-phong').textContent = soPhong;
             document.getElementById('summary-gia-phong').textContent = formatCurrency(giaPhong);
             document.getElementById('summary-tien-dv').textContent = formatCurrency(tienDV);
             document.getElementById('summary-tong-cong').textContent = formatCurrency(totalPrice);
         } else {
-            // Đặt lại các trường khi không có phòng nào được chọn
             priceInput.value = '';
             idDatphongInput.value = '';
             summaryDiv.style.display = 'none';
@@ -256,9 +209,4 @@ try {
     });
 </script>
 
-<?php 
-if ($conn) {
-    $conn->close();
-}
-include 'footer.php'; 
-?>
+<?php include __DIR__ . '/layouts/footer.php'; ?>

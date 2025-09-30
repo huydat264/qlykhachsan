@@ -1,175 +1,8 @@
 <?php
-include 'header.php';
-include 'db.php'; // File này chứa biến $conn để kết nối CSDL
-include 'auth.php'; // Gọi file auth
-require_login();    // Khóa trang, yêu cầu đăng nhập
-check_permission(['ADMIN', 'NHANVIEN']); // Cả 2 role đều được vào
-
-// Cấu hình để báo cáo ngoại lệ
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-
-// Biến để lưu trạng thái thông báo
-$message = '';
-$error = false;
-
-// Lấy danh sách nhân viên để hiển thị trong form và lưu vào JavaScript
-$nhanvien_list = [];
-// Lấy thêm Lương cơ bản và Chức vụ để hiển thị ngay trong form (JS sẽ xử lý)
-$sql_nhanvien = "SELECT id_nhanvien, ho_ten, luong_co_ban, chuc_vu FROM nhanvien ORDER BY ho_ten";
-$result_nhanvien = $conn->query($sql_nhanvien);
-if ($result_nhanvien) {
-    while ($row = $result_nhanvien->fetch_assoc()) {
-        $nhanvien_list[] = $row;
-    }
-}
-
-// =========================================================================
-// Xử lý thêm hoặc cập nhật bản ghi (LOGIC CHÍNH ĐÃ ĐƯỢC CẬP NHẬT)
-// =========================================================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
-    // Lấy ID nhân viên từ form (dùng $_POST['id_nhanvien'] do đã thêm input hidden khi edit)
-    $id_nhanvien = intval($_POST['id_nhanvien']);
-    $thang = intval($_POST['thang']);
-    $nam = intval($_POST['nam']);
-    $thuong = floatval($_POST['thuong']);
-    $phat = floatval($_POST['phat']);
-    $id_bangluong = isset($_POST['id_bangluong']) ? intval($_POST['id_bangluong']) : 0;
-
-    // 1. Lấy Lương cơ bản từ bảng nhanvien
-    $luong_co_ban = 0;
-    $sql_luongcb = "SELECT luong_co_ban FROM nhanvien WHERE id_nhanvien = ?";
-    $stmt_luongcb = $conn->prepare($sql_luongcb);
-    if ($stmt_luongcb) {
-        $stmt_luongcb->bind_param("i", $id_nhanvien);
-        $stmt_luongcb->execute();
-        $result_luongcb = $stmt_luongcb->get_result();
-        $luong_co_ban = ($result_luongcb->num_rows > 0) ? $result_luongcb->fetch_assoc()['luong_co_ban'] : 0;
-        $stmt_luongcb->close();
-    }
-
-    // 2. Lấy Số ngày công từ bảng chamcong
-    $so_ngay_cong = 0;
-    $sql_cong = "SELECT so_ngay_di_lam FROM chamcong WHERE id_nhanvien = ? AND thang = ? AND nam = ?";
-    $stmt_cong = $conn->prepare($sql_cong);
-    if ($stmt_cong) {
-        $stmt_cong->bind_param("iii", $id_nhanvien, $thang, $nam);
-        $stmt_cong->execute();
-        $result_cong = $stmt_cong->get_result();
-        $so_ngay_cong = ($result_cong->num_rows > 0) ? $result_cong->fetch_assoc()['so_ngay_di_lam'] : 0;
-        $stmt_cong->close();
-    }
-
-
-    // 3. Tính Tổng lương dựa trên công thức Lương theo ngày * Ngày công + Thưởng - Phạt
-    $tong_luong = 0;
-    if ($luong_co_ban > 0 && $thang > 0 && $nam > 0) {
-        // Lấy tổng số ngày trong tháng để tính lương
-        $total_days_in_month = cal_days_in_month(CAL_GREGORIAN, $thang, $nam);
-        
-        if ($total_days_in_month > 0) {
-            $luong_theo_ngay = $luong_co_ban / $total_days_in_month;
-            $tong_luong = ($luong_theo_ngay * $so_ngay_cong) + $thuong - $phat;
-        } else {
-             // Trường hợp tháng không hợp lệ (nên có validate trước)
-             $tong_luong = $thuong - $phat;
-        }
-    } else {
-        $message = "Lỗi tính toán: Không tìm thấy Lương cơ bản hoặc tháng/năm không hợp lệ.";
-        $error = true;
-    }
-
-
-    if (!$error) {
-        if ($id_bangluong > 0) {
-            // Cập nhật bản ghi
-            $sql = "UPDATE bangluong SET id_nhanvien = ?, thang = ?, nam = ?, so_ngay_cong = ?, thuong = ?, phat = ?, luong_co_ban = ?, tong_luong = ? WHERE id_bangluong = ?";
-            try {
-                $stmt = $conn->prepare($sql);
-                // Chuỗi định dạng: iiiiididi (id_nv, thang, nam, so_cong, thuong, phat, luong_cb, tong_luong, id_bl) - d: double/float cho lương
-                $stmt->bind_param("iiiididdi", $id_nhanvien, $thang, $nam, $so_ngay_cong, $thuong, $phat, $luong_co_ban, $tong_luong, $id_bangluong);
-                if ($stmt->execute()) {
-                    $message = "Cập nhật bảng lương thành công! Tổng lương mới: " . number_format($tong_luong) . " VNĐ";
-                } else {
-                    $message = "Lỗi khi cập nhật: " . $stmt->error;
-                    $error = true;
-                }
-                $stmt->close();
-            } catch (mysqli_sql_exception $e) {
-                $message = "Lỗi CSDL: " . $e->getMessage();
-                $error = true;
-            }
-        } else {
-            // Thêm bản ghi mới
-            $sql = "INSERT INTO bangluong (id_nhanvien, thang, nam, so_ngay_cong, thuong, phat, luong_co_ban, tong_luong) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            try {
-                $stmt = $conn->prepare($sql);
-                // Chuỗi định dạng: iiiiidid (id_nv, thang, nam, so_cong, thuong, phat, luong_cb, tong_luong) - d: double/float cho lương
-                $stmt->bind_param("iiiididd", $id_nhanvien, $thang, $nam, $so_ngay_cong, $thuong, $phat, $luong_co_ban, $tong_luong);
-                if ($stmt->execute()) {
-                    $message = "Thêm bảng lương thành công! Tổng lương: " . number_format($tong_luong) . " VNĐ";
-                } else {
-                    // Lỗi UNIQUE KEY nếu đã tồn tại bản ghi của nhân viên trong tháng/năm đó
-                    if ($conn->errno == 1062) {
-                        $message = "Lỗi: Bảng lương cho nhân viên này trong tháng $thang/$nam đã tồn tại. Vui lòng sử dụng chức năng 'Sửa'.";
-                    } else {
-                        $message = "Lỗi khi thêm: " . $stmt->error;
-                    }
-                    $error = true;
-                }
-                $stmt->close();
-            } catch (mysqli_sql_exception $e) {
-                $message = "Lỗi CSDL: " . $e->getMessage();
-                $error = true;
-            }
-        }
-    }
-
-
-    // Chuyển hướng để tránh gửi lại form khi làm mới trang
-    if (!$error) {
-        header("Location: quanlybangluong.php?message=" . urlencode($message));
-        exit();
-    }
-}
-
-// KHÔNG XỬ LÝ XÓA BẢN GHI (theo yêu cầu của bạn)
-
-
-// Lấy thông báo từ URL (nếu có)
-if (isset($_GET['message'])) {
-    $message = htmlspecialchars($_GET['message']);
-    $error = strpos($message, 'Lỗi') !== false;
-}
-
-// Lấy dữ liệu cho chế độ chỉnh sửa (nếu có)
-$edit_data = null;
-if (isset($_GET['edit'])) {
-    $id_bangluong = intval($_GET['edit']);
-    // Truy vấn dữ liệu để hiển thị lên form
-    $sql_edit = "SELECT bl.*, nv.ho_ten, nv.luong_co_ban, nv.chuc_vu FROM bangluong bl JOIN nhanvien nv ON bl.id_nhanvien = nv.id_nhanvien WHERE bl.id_bangluong = ?";
-    $stmt_edit = $conn->prepare($sql_edit);
-    if ($stmt_edit) {
-        $stmt_edit->bind_param("i", $id_bangluong);
-        $stmt_edit->execute();
-        $result_edit = $stmt_edit->get_result();
-        if ($result_edit && $result_edit->num_rows > 0) {
-            $edit_data = $result_edit->fetch_assoc();
-        }
-        $stmt_edit->close();
-    }
-}
-
-// Lấy danh sách bảng lương để hiển thị
-$bangluong_list = [];
-$sql_bangluong = "SELECT bl.*, nv.ho_ten, nv.chuc_vu FROM bangluong bl JOIN nhanvien nv ON bl.id_nhanvien = nv.id_nhanvien ORDER BY bl.nam DESC, bl.thang DESC, nv.ho_ten ASC";
-$result_bangluong = $conn->query($sql_bangluong);
-if ($result_bangluong) {
-    while ($row = $result_bangluong->fetch_assoc()) {
-        $bangluong_list[] = $row;
-    }
-}
+ include __DIR__ . '/layouts/header.php'; 
+require_login();
+check_permission(['ADMIN','NHANVIEN']);
 ?>
-
 <style>
     /* CSS giữ nguyên, thêm icon cho đẹp */
     @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
@@ -218,16 +51,62 @@ if ($result_bangluong) {
         gap: 20px;
         margin-bottom: 15px;
     }
-    .form-group {
-        flex: 1;
-        min-width: 200px;
-    }
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: #555;
-    }
+   
+.form-group {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.form-group:hover label {
+    color: #c80f91ff; /* nổi bật label khi hover */
+}
+
+
+/* Rút ngắn select nhân viên */
+select[name="id_nhanvien"] {
+    width: 560px;       /* chỉnh độ dài mong muốn */
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    transition: all 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='18' viewBox='0 0 24 24' width='18' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 16px;
+}
+
+/* Hover & Focus vẫn giữ nguyên */
+select[name="id_nhanvien"]:hover {
+    border-color: #a2104fff;
+    background-color: #f9fbff;
+}
+
+select[name="id_nhanvien"]:focus {
+    border-color: #00ffe5ff;
+    box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
+}
+
+
+
+
     .form-row input, .form-row select, .form-row textarea {
         width: 100%;
         padding: 12px;
@@ -266,8 +145,8 @@ if ($result_bangluong) {
         text-decoration: none;
         transition: background-color 0.3s ease, transform 0.2s ease;
     }
-    .form-actions button[name="submit"] { background-color: #007bff; }
-    .form-actions button[name="submit"]:hover { background-color: #0056b3; transform: translateY(-2px); }
+    .form-actions button[name="submit"] { background-color: #108544ff; }
+    .form-actions button[name="submit"]:hover { background-color: #9b5d0bff; transform: translateY(-2px); }
     .form-actions a.cancel-btn { background-color: #6c757d; }
     .form-actions a.cancel-btn:hover { background-color: #5a6268; transform: translateY(-2px); }
     .table-container {
@@ -286,7 +165,7 @@ if ($result_bangluong) {
         border-bottom: 1px solid #e0e0e0;
     }
     th {
-        background-color: #0056b3;
+        background-color: #1d3484ff;
         color: #fff;
         font-weight: 600;
         text-transform: uppercase;
@@ -298,8 +177,8 @@ if ($result_bangluong) {
     tr:hover {
         background-color: #e8f0fe;
     }
-    td a { color: #007bff; text-decoration: none; font-weight: 600; transition: color 0.3s;}
-    td a:hover { color: #0056b3; text-decoration: underline;}
+    td a { color: #ab1d0bff; text-decoration: none; font-weight: 600; transition: color 0.3s;}
+    td a:hover { color: #e11797ff; text-decoration: underline;}
     .currency { text-align: right; }
     .alert-message {
         padding: 15px;
@@ -333,7 +212,8 @@ if ($result_bangluong) {
 
     <div class="form-box">
         <h3><i class="fas fa-calculator"></i> <?= $edit_data ? 'Chỉnh Sửa Bảng Lương' : 'Thêm Bảng Lương Mới' ?></h3>
-        <form method="post" action="quanlybangluong.php">
+        <form method="post" action="index.php?controller=quanlybangluong">
+
             <?php if ($edit_data): ?>
                 <input type="hidden" name="id_bangluong" value="<?= htmlspecialchars($edit_data['id_bangluong']) ?>">
             <?php endif; ?>
@@ -402,7 +282,7 @@ if ($result_bangluong) {
             <div class="form-actions">
                 <button type="submit" name="submit"><i class="fas fa-save"></i> <?= $edit_data ? 'Cập nhật' : 'Thêm mới' ?></button>
                 <?php if ($edit_data): ?>
-                    <a href="quanlybangluong.php" class="cancel-btn"><i class="fas fa-times"></i> Hủy</a>
+                    <a href="index.php?controller=quanlybangluong" class="cancel-btn"><i class="fas fa-times"></i> Hủy</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -439,7 +319,7 @@ if ($result_bangluong) {
                             <td class="currency"><?= htmlspecialchars(number_format($bl['luong_co_ban'])) ?> VNĐ</td>
                             <td class="currency"><strong><?= htmlspecialchars(number_format($bl['tong_luong'])) ?> VNĐ</strong></td>
                             <td>
-                                <a href="quanlybangluong.php?edit=<?= htmlspecialchars($bl['id_bangluong']) ?>"><i class="fas fa-edit"></i> Sửa</a>
+                              <a href="index.php?controller=quanlybangluong&edit=<?= htmlspecialchars($bl['id_bangluong']) ?>"><i class="fas fa-edit"></i> Sửa</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -511,4 +391,4 @@ if ($result_bangluong) {
     });
 </script>
 
-<?php include 'footer.php'; ?>
+<?php include __DIR__ . '/layouts/footer.php'; ?>

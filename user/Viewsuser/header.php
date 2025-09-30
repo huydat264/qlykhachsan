@@ -4,30 +4,25 @@
       session_start();
   }
   ?>
-
-  <header>
-    <div class="logo">THE GRAND ELEGANCE HOTEL</div>
-    <nav>
-      <a href="/doanqlks/user/Viewsuser/trangchu.php">Trang Chủ</a>
-      <a href="/doanqlks/user/Viewsuser/Datphong.php">Đặt Phòng</a>
-      <a href="../Controlleruser/DichVuController.php?action=list">Dịch vụ</a>
-
-      <a href="/doanqlks/user/Viewsuser/Lienlac.php">Liên Lạc</a>
-
-
-    </nav>
-    <div class="auth-buttons">
-      <?php if (isset($_SESSION["user"])): ?>
-        <span class="welcome">👤 <?php echo htmlspecialchars($_SESSION["user"]["username"]); ?></span>
-        <a href="../Controlleruser/XemPhongDaDatController.php" class="btn-auth">Phòng đã đặt</a>
-        <a href="logout.php" class="logout-btn">Đăng xuất</a>
-      <?php else: ?>
-        <a href="register.php" class="btn-auth">Đăng ký</a>
-        <a href="login.php" class="btn-auth login">Đăng nhập</a>
-      <?php endif; ?>
-    </div>
-  </header>
-
+<header>
+  <div class="logo">THE GRAND ELEGANCE HOTEL</div>
+  <nav>
+    <a href="/doanqlks/user/Viewsuser/trangchu.php">Trang Chủ</a>
+    <a href="/doanqlks/user/Viewsuser/Datphong.php">Đặt Phòng</a>
+    <a href="/doanqlks/user/Controlleruser/DichVuController.php?action=list">Dịch vụ</a>
+    <a href="/doanqlks/user/Viewsuser/Lienlac.php">Liên Lạc</a>
+  </nav>
+  <div class="auth-buttons">
+    <?php if (isset($_SESSION["user"])): ?>
+      <span class="welcome">👤 <?php echo htmlspecialchars($_SESSION["user"]["username"]); ?></span>
+      <a href="/doanqlks/user/Controlleruser/XemPhongDaDatController.php" class="btn-auth">Phòng đã đặt</a>
+      <a href="/doanqlks/user/Controlleruser/logout.php" class="logout-btn">Đăng xuất</a>
+    <?php else: ?>
+      <a href="/doanqlks/user/Viewsuser/register.php" class="btn-auth">Đăng ký</a>
+      <a href="/doanqlks/user/Viewsuser/login.php" class="btn-auth login">Đăng nhập</a>
+    <?php endif; ?>
+  </div>
+</header>
   <style>
     header {
       background: #002060;

@@ -1,19 +1,25 @@
 <?php
-// header.php
-session_start();
-// Lấy tên trang hiện tại để làm nổi bật nút Trang chủ
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <header>
+  
  <div class="logo">THE GRAND ELEGANCE HOTEL</div>
  <nav> <a href="index.php" class="nav-button <?= ($current_page == 'index.php') ? 'active-button' : '' ?>">Trang chủ</a>
  </nav>
  <div class="user-info">
  <?php if (isset($_SESSION['user_name'])): ?>
  <span style="margin-right: 15px; color: #ffcc00; font-weight: bold;">Chào, <?= htmlspecialchars($_SESSION['user_name']) ?></span>
- <a href="logout.php" class="logout-button">Đăng xuất</a>
+<a href="index.php?controller=logout" class="logout-button">Đăng xuất</a>
+
+
  <?php else: ?>
- <a href="login.php" class="login-button">Đăng nhập</a>
+<a href="index.php?controller=login&action=index" class="login-button">Đăng nhập</a>
+
  <?php endif; ?>
  </div>
 </header>

@@ -1,108 +1,4 @@
-<?php
-include 'header.php';
-include 'db.php';
-include 'auth.php'; // Gọi file auth
-require_login();    // Khóa trang, yêu cầu đăng nhập
-check_permission(['ADMIN', 'NHANVIEN']); // Cả 2 role đều được vào
-
-// Cấu hình bảng và cột
-$table = 'dichvu';
-$id_col = 'id_dichvu';
-$name_col = 'ten_dich_vu';
-$price_col = 'gia';
-$desc_col = 'mo_ta';
-
-// Xử lý thêm dịch vụ
-if (isset($_POST['them'])) {
-    $ten = $_POST[$name_col];
-    $gia = $_POST[$price_col];
-    $mota = $_POST[$desc_col];
-
-    $sql = "INSERT INTO `$table` (`$name_col`, `$price_col`, `$desc_col`) VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sds", $ten, $gia, $mota);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Thêm dịch vụ thành công!');window.location='dichvu.php';</script>";
-    } else {
-        echo "<p style='color:red'>Lỗi khi thêm: " . $stmt->error . "</p>";
-    }
-    $stmt->close();
-}
-
-// Xử lý lưu sửa dịch vụ
-if (isset($_POST['luu'])) {
-    $id = (int)$_POST[$id_col];
-    $ten = $_POST[$name_col];
-    $gia = $_POST[$price_col];
-    $mota = $_POST[$desc_col];
-
-    $sql = "UPDATE `$table` SET `$name_col`=?, `$price_col`=?, `$desc_col`=? WHERE `$id_col`=?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sdsi", $ten, $gia, $mota, $id);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Cập nhật dịch vụ thành công!');window.location='dichvu.php';</script>";
-    } else {
-        echo "<p style='color:red'>Lỗi khi cập nhật: " . $stmt->error . "</p>";
-    }
-    $stmt->close();
-}
-
-// Xử lý xóa dịch vụ
-if (isset($_GET['xoa'])) {
-    $id = (int)$_GET['xoa'];
-    $sql = "DELETE FROM `$table` WHERE `$id_col`=?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $id);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Xóa dịch vụ thành công!');window.location='dichvu.php';</script>";
-        exit;
-    } else {
-        echo "<p style='color:red'>Lỗi khi xóa: " . $stmt->error . "</p>";
-    }
-    $stmt->close();
-}
-
-// Tìm kiếm
-$search = '';
-$where = '';
-$params = [];
-if (isset($_POST['timkiem'])) {
-    $search = $_POST['search'];
-    $where = "WHERE `$name_col` LIKE ? OR `$desc_col` LIKE ?";
-    $params = ['ss', '%' . $search . '%', '%' . $search . '%'];
-}
-
-$sql_select = "SELECT * FROM `$table` " . $where . " ORDER BY `$name_col`";
-$stmt = $conn->prepare($sql_select);
-if (isset($_POST['timkiem'])) {
-    $stmt->bind_param(...$params);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$stmt->close();
-
-if ($result === false) {
-    echo "<p style='color:red'>SQL lỗi: " . $conn->error . "</p>";
-    include 'footer.php'; exit;
-}
-
-// Kiểm tra ID đang sửa
-$edit_id = isset($_GET['edit']) ? $_GET['edit'] : null;
-$edit_data = null;
-if ($edit_id) {
-    $sql_edit = "SELECT * FROM `$table` WHERE `$id_col` = ?";
-    $stmt_edit = $conn->prepare($sql_edit);
-    $stmt_edit->bind_param("i", $edit_id);
-    $stmt_edit->execute();
-    $edit_result = $stmt_edit->get_result();
-    $edit_data = $edit_result->fetch_assoc();
-    $stmt_edit->close();
-}
-?>
-
+<?php include __DIR__ . '/layouts/header.php'; ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
     body {
@@ -141,13 +37,7 @@ if ($edit_id) {
         padding: 10px 15px;
         border: 1px solid #ced4da;
         border-radius: 25px;
-        transition: border-color 0.3s, box-shadow 0.3s;
         font-size: 1rem;
-    }
-    .search-form input:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
-        outline: none;
     }
     .search-form button {
         padding: 10px 20px;
@@ -157,7 +47,6 @@ if ($edit_id) {
         border-radius: 25px;
         cursor: pointer;
         font-weight: 600;
-        transition: background-color 0.3s;
     }
     .search-form button:hover {
         background-color: #0056b3;
@@ -166,7 +55,7 @@ if ($edit_id) {
         background-color: #ffffff;
         padding: 30px;
         border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         margin-bottom: 30px;
         border-left: 5px solid #1d4d84;
     }
@@ -190,16 +79,10 @@ if ($edit_id) {
         border: 1px solid #ced4da;
         border-radius: 8px;
         box-sizing: border-box;
-        transition: border-color 0.3s, box-shadow 0.3s;
     }
     .form-row textarea {
         height: 100px;
         resize: vertical;
-    }
-    .form-row input:focus, .form-row textarea:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-        outline: none;
     }
     .form-actions {
         display: flex;
@@ -216,6 +99,9 @@ if ($edit_id) {
         border: none;
         cursor: pointer;
         color: #fff;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
     .form-actions button[name="them"], .form-actions button[name="luu"] {
         background-color: #28a745;
@@ -238,7 +124,7 @@ if ($edit_id) {
         background-color: #fff;
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         margin-top: 20px;
     }
     th, td {
@@ -266,7 +152,6 @@ if ($edit_id) {
         margin-right: 15px;
         text-decoration: none;
         font-weight: 600;
-        transition: color 0.2s;
         color: #007bff;
     }
     .action-links a:hover {
@@ -322,7 +207,7 @@ if ($edit_id) {
     <div class="header-container">
         <h2 class="main-title">Quản lý Dịch vụ</h2>
         <form method="post" class="search-form">
-            <input type="text" name="search" placeholder="Tìm kiếm dịch vụ..." value="<?= htmlspecialchars($search) ?>">
+            <input type="text" name="search" placeholder="Tìm kiếm dịch vụ..." value="<?= htmlspecialchars($search ?? '') ?>">
             <button type="submit" name="timkiem"><i class="fas fa-search"></i> Tìm</button>
         </form>
     </div>
@@ -330,27 +215,27 @@ if ($edit_id) {
     <div class="form-box">
         <h3>
             <i class="fas fa-tools"></i>
-            <?= $edit_data ? 'Chỉnh sửa dịch vụ #' . htmlspecialchars($edit_data[$id_col]) : 'Thêm Dịch vụ Mới' ?>
+            <?= $edit_data ? 'Chỉnh sửa dịch vụ #' . htmlspecialchars($edit_data['id_dichvu']) : 'Thêm Dịch vụ Mới' ?>
         </h3>
         <form method="post">
-            <?php if ($edit_data) { ?>
-                <input type="hidden" name="<?= htmlspecialchars($id_col) ?>" value="<?= htmlspecialchars($edit_data[$id_col]) ?>">
-            <?php } ?>
+            <?php if ($edit_data): ?>
+                <input type="hidden" name="id_dichvu" value="<?= htmlspecialchars($edit_data['id_dichvu']) ?>">
+            <?php endif; ?>
             <div class="form-row">
-                <input type="text" name="<?= htmlspecialchars($name_col) ?>" placeholder="Tên dịch vụ" value="<?= $edit_data ? htmlspecialchars($edit_data[$name_col]) : '' ?>" required>
-                <input type="number" step="0.01" name="<?= htmlspecialchars($price_col) ?>" placeholder="Giá" value="<?= $edit_data ? htmlspecialchars($edit_data[$price_col]) : '' ?>" required>
+                <input type="text" name="ten_dich_vu" placeholder="Tên dịch vụ" value="<?= $edit_data ? htmlspecialchars($edit_data['ten_dich_vu']) : '' ?>" required>
+                <input type="number" step="0.01" name="gia" placeholder="Giá" value="<?= $edit_data ? htmlspecialchars($edit_data['gia']) : '' ?>" required>
             </div>
             <div class="form-row">
-                <textarea name="<?= htmlspecialchars($desc_col) ?>" placeholder="Mô tả"><?= $edit_data ? htmlspecialchars($edit_data[$desc_col]) : '' ?></textarea>
+                <textarea name="mo_ta" placeholder="Mô tả"><?= $edit_data ? htmlspecialchars($edit_data['mo_ta']) : '' ?></textarea>
             </div>
             <div class="form-actions">
                 <button type="submit" name="<?= $edit_data ? 'luu' : 'them' ?>">
                     <i class="fas fa-<?= $edit_data ? 'save' : 'plus' ?>"></i> 
                     <?= $edit_data ? 'Lưu Sửa' : 'Thêm' ?>
                 </button>
-                <?php if ($edit_data) { ?>
-                    <a href="dichvu.php"><i class="fas fa-times-circle"></i> Hủy</a>
-                <?php } ?>
+                <?php if ($edit_data): ?>
+                    <a href="index.php?controller=dichvu"><i class="fas fa-times-circle"></i> Hủy</a>
+                <?php endif; ?>
             </div>
         </form>
     </div>
@@ -366,19 +251,19 @@ if ($edit_id) {
             </tr>
         </thead>
         <tbody>
-            <?php if ($result->num_rows > 0): ?>
-                <?php while ($row = $result->fetch_assoc()) { ?>
+            <?php if (!empty($dichvuList)): ?>
+                <?php foreach ($dichvuList as $row): ?>
                 <tr>
-                    <td><?= htmlspecialchars($row[$id_col]) ?></td>
-                    <td><?= htmlspecialchars($row[$name_col]) ?></td>
-                    <td><?= number_format($row[$price_col], 0, ",", ".") ?> VNĐ</td>
-                    <td><?= htmlspecialchars($row[$desc_col]) ?></td>
+                    <td><?= htmlspecialchars($row['id_dichvu']) ?></td>
+                    <td><?= htmlspecialchars($row['ten_dich_vu']) ?></td>
+                    <td><?= number_format($row['gia'], 0, ",", ".") ?> VNĐ</td>
+                    <td><?= htmlspecialchars($row['mo_ta']) ?></td>
                     <td class="action-links">
-                        <a href="?edit=<?= htmlspecialchars($row[$id_col]) ?>"><i class="fas fa-edit"></i> Sửa</a> |
-                        <a href="#" class="delete-link" data-id="<?= htmlspecialchars($row[$id_col]) ?>"><i class="fas fa-trash-alt"></i> Xóa</a>
+                        <a href="index.php?controller=dichvu&edit=<?= htmlspecialchars($row['id_dichvu']) ?>"><i class="fas fa-edit"></i> Sửa</a> |
+                        <a href="#" class="delete-link" data-id="<?= htmlspecialchars($row['id_dichvu']) ?>"><i class="fas fa-trash-alt"></i> Xóa</a>
                     </td>
                 </tr>
-                <?php } ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <tr>
                     <td colspan="5" style="text-align: center;">Không tìm thấy dịch vụ nào.</td>
@@ -393,45 +278,46 @@ if ($edit_id) {
         <h4><i class="fas fa-exclamation-triangle"></i> Xác nhận xóa</h4>
         <p>Bạn có chắc chắn muốn xóa dịch vụ này? Hành động này không thể hoàn tác.</p>
         <div class="modal-buttons">
-            <button id="confirm-delete"><i class="fas fa-check"></i> Xóa</button>
+            <!-- Nút xác nhận xóa -->
+            <button id="confirm-delete"><i class="fas fa-trash-alt"></i> Xóa</button>
             <button id="cancel-delete"><i class="fas fa-times"></i> Hủy</button>
         </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const deleteLinks = document.querySelectorAll('.delete-link');
-        const modal = document.getElementById('delete-modal');
-        const confirmBtn = document.getElementById('confirm-delete');
-        const cancelBtn = document.getElementById('cancel-delete');
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteLinks = document.querySelectorAll('.delete-link');
+    const modal = document.getElementById('delete-modal');
+    const confirmBtn = document.getElementById('confirm-delete');
+    const cancelBtn = document.getElementById('cancel-delete');
 
-        let currentId = null;
+    let currentId = null;
 
-        deleteLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                currentId = this.getAttribute('data-id');
-                modal.style.display = 'flex';
-            });
-        });
-
-        confirmBtn.addEventListener('click', function() {
-            if (currentId) {
-                window.location.href = `?xoa=${currentId}`;
-            }
-        });
-
-        cancelBtn.addEventListener('click', function() {
-            modal.style.display = 'none';
-        });
-
-        window.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
+    deleteLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentId = this.getAttribute('data-id');
+            modal.style.display = 'flex';
         });
     });
-</script>
 
-<?php include 'footer.php'; ?>
+    confirmBtn.addEventListener('click', function() {
+        if (currentId) {
+            // Redirect đúng tới controller + action xóa
+            window.location.href = `index.php?controller=dichvu&xoa=${currentId}`;
+        }
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+</script>
+<?php include __DIR__ . '/layouts/footer.php'; ?>
