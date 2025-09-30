@@ -10,7 +10,8 @@
     <nav>
       <a href="/doanqlks/user/Viewsuser/trangchu.php">Trang Chủ</a>
       <a href="/doanqlks/user/Viewsuser/Datphong.php">Đặt Phòng</a>
-      <a href="/doanqlks/user/Viewsuser/dichvu.php">Dịch Vụ</a>
+      <a href="../Controlleruser/DichVuController.php?action=list">Dịch vụ</a>
+
       <a href="/doanqlks/user/Viewsuser/Lienlac.php">Liên Lạc</a>
 
 

@@ -51,6 +51,20 @@ public function getRoomById($id) {
     $stmt->close();
     return $room;
 }
+public function updateTrangThai($idPhong, $trangThai) {
+    $sql = "UPDATE Phong SET trang_thai = ? WHERE id_phong = ?";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param("si", $trangThai, $idPhong);
+    return $stmt->execute();
+}
+
+public function capNhatPhongHetHan() {
+    $sql = "UPDATE Phong p
+            JOIN DatPhong d ON p.id_phong = d.id_phong
+            SET p.trang_thai = 'Trống'
+            WHERE d.ngay_tra < CURDATE()";
+    return $this->conn->query($sql);
+}
 
 
 

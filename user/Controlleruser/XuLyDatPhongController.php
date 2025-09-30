@@ -33,6 +33,9 @@ class XuLyDatPhongController {
             exit;
         }
 
+        // ✅ Trước khi load form, auto reset phòng nào đã hết hạn trả về trạng thái 'Trống'
+        $this->phongModel->capNhatPhongHetHan();
+
         include __DIR__ . "/../Viewsuser/xulydatphong.php";
     }
 
@@ -44,7 +47,6 @@ class XuLyDatPhongController {
             exit;
         }
 
-        // ✅ Sửa: lấy id_taikhoan từ session (debug m gửi lên)
         $taiKhoanId = intval($_SESSION['user']['id_taikhoan'] ?? 0);
 
         if (!$taiKhoanId) {
@@ -52,7 +54,7 @@ class XuLyDatPhongController {
             exit;
         }
 
-        // ✅ Lấy thông tin khách hàng bằng id_taikhoan
+        // Lấy thông tin khách hàng
         $khachHang = $this->khachHangModel->getByTaiKhoanId($taiKhoanId);
         if (!$khachHang) {
             echo "<script>alert('Bạn cần nhập thông tin khách hàng trước khi đặt phòng'); window.location.href='../Viewsuser/nhapthongtin.php';</script>";
@@ -100,6 +102,9 @@ class XuLyDatPhongController {
                 'hinh_thuc'       => "Chuyển khoản",
                 'loai_thanh_toan' => "Đặt cọc"
             ]);
+
+            // ✅ Update trạng thái phòng sang "Đã đặt"
+            $this->phongModel->updateTrangThai($id_phong, "Đã đặt");
 
             // Chuyển sang trang xác nhận
             header("Location: ../Viewsuser/xacnhanthanhtoan.php?id_datphong=" . $idDatPhong);
