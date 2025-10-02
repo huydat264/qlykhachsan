@@ -52,10 +52,20 @@ include __DIR__ . '/layouts/header.php';
             <option value="Nữ" <?= ($edit_data && $edit_data['gioi_tinh']=='Nữ')?'selected':'' ?>>Nữ</option>
             <option value="Khác" <?= ($edit_data && $edit_data['gioi_tinh']=='Khác')?'selected':'' ?>>Khác</option>
         </select>
-        <input type="text" name="so_dien_thoai" placeholder="Số điện thoại" value="<?= $edit_data['so_dien_thoai'] ?? '' ?>" required>
+        <input type="tel" name="so_dien_thoai" placeholder="Số điện thoại" 
+       value="<?= $edit_data['so_dien_thoai'] ?? '' ?>" 
+       pattern="[0-9]{10,11}" 
+       oninput="this.value=this.value.replace(/[^0-9]/g,'');" 
+       required>
+
         <input type="email" name="email" placeholder="Email" value="<?= $edit_data['email'] ?? '' ?>">
         <input type="text" name="cccd" placeholder="CCCD" value="<?= $edit_data['cccd'] ?? '' ?>">
-        <input type="text" name="dia_chi" placeholder="Địa chỉ" value="<?= $edit_data['dia_chi'] ?? '' ?>">
+       <input type="text" 
+       name="dia_chi" 
+       placeholder="Địa chỉ (quê quán)" 
+       value="<?= $edit_data['dia_chi'] ?? '' ?>" 
+       required>
+
     </div>
 
     <div class="form-actions">

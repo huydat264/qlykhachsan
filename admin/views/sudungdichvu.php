@@ -145,6 +145,34 @@
             <?= htmlspecialchars($message) ?>
         </div>
     <?php endif; ?>
+<!-- TÌM KIẾM DỊCH VỤ -->
+<div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+    <form method="get" action="" style="display: flex; gap: 5px; align-items: center;">
+        <input type="hidden" name="controller" value="sudungdichvu">
+        <input type="hidden" name="action" value="index">
+
+        <input type="text" name="search" placeholder="Tìm dịch vụ..." 
+               value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" 
+               style="padding: 8px 12px; font-size: 14px; border-radius: 8px; border: 1px solid #ccc; width: 200px; transition: all 0.3s;">
+        
+        <button type="submit" 
+                style="padding: 8px 12px; font-size: 14px; border-radius: 8px; border: none; background-color: #124070ff; color: #fff; cursor: pointer; transition: all 0.3s;">
+            <i class="fas fa-search"></i> Tìm
+        </button>
+    </form>
+</div>
+
+<style>
+    /* Hiệu ứng hover */
+    form input[name="search"]:focus {
+        border-color: #124070ff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(18, 64, 112, 0.2);
+    }
+    form button:hover {
+        background-color: #0d3055ff;
+    }
+</style>
 
     <div class="form-box">
         <!-- TIÊU ĐỀ FORM SẼ THAY ĐỔI TÙY THEO THÊM HAY SỬA -->

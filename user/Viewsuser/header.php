@@ -16,7 +16,7 @@
     <?php if (isset($_SESSION["user"])): ?>
       <span class="welcome">👤 <?php echo htmlspecialchars($_SESSION["user"]["username"]); ?></span>
       <a href="/doanqlks/user/Controlleruser/XemPhongDaDatController.php" class="btn-auth">Phòng đã đặt</a>
-      <a href="/doanqlks/user/Controlleruser/logout.php" class="logout-btn">Đăng xuất</a>
+      <a href="/doanqlks/user/Viewsuser/logout.php" class="logout-btn">Đăng xuất</a>
     <?php else: ?>
       <a href="/doanqlks/user/Viewsuser/register.php" class="btn-auth">Đăng ký</a>
       <a href="/doanqlks/user/Viewsuser/login.php" class="btn-auth login">Đăng nhập</a>

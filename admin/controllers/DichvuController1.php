@@ -39,18 +39,35 @@ class DichvuController1 {
     }
 
     // Thêm dịch vụ
-    private function add($data) {
+private function add($data) {
+    try {
+        if (!isset($data['gia']) || $data['gia'] < 0) {
+            throw new Exception("❌ Giá dịch vụ không được âm!");
+        }
+
         $this->dichvuModel->add($data);
         echo "<script>alert('Thêm dịch vụ thành công!');window.location='index.php?controller=dichvu';</script>";
         exit;
+    } catch (Exception $e) {
+        echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
     }
+}
 
-    // Cập nhật dịch vụ
-    private function update($id, $data) {
+// Cập nhật dịch vụ
+private function update($id, $data) {
+    try {
+        if (!isset($data['gia']) || $data['gia'] < 0) {
+            throw new Exception("❌ Giá dịch vụ không được âm!");
+        }
+
         $this->dichvuModel->update($id, $data);
         echo "<script>alert('Cập nhật dịch vụ thành công!');window.location='index.php?controller=dichvu';</script>";
         exit;
+    } catch (Exception $e) {
+        echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
     }
+}
+
 
     // Xóa dịch vụ
     public function delete($id) {

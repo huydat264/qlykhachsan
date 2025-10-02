@@ -33,25 +33,35 @@ class ChamcongController1
                 ];
                 $idChamcong = isset($_POST['id_chamcong']) ? (int)$_POST['id_chamcong'] : 0;
 
-                try {
-                    if ($idChamcong > 0) {
-                        $ok = $model->update($idChamcong, $data);
-                        $message = $ok ? "Cập nhật chấm công thành công!" : "Lỗi khi cập nhật!";
-                        $error   = !$ok;
-                    } else {
-                        $ok = $model->insert($data);
-                        $message = $ok ? "Thêm chấm công thành công!" : "Lỗi khi thêm!";
-                        $error   = !$ok;
-                    }
-                } catch (PDOException $e) {
-                    $message = "Lỗi: " . $e->getMessage();
+                // ✅ Tính tổng số ngày và số ngày tối đa trong tháng
+                $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $data['thang'], $data['nam']);
+                $totalDays   = $data['so_ngay_di_lam'] 
+                             + $data['so_ngay_nghi_co_phep'] 
+                             + $data['so_ngay_nghi_khong_phep'];
+
+                if ($totalDays > $daysInMonth) {
+                    $message = "Tổng số ngày ($totalDays) vượt quá số ngày trong tháng {$data['thang']}/{$data['nam']} (tối đa $daysInMonth ngày)!";
                     $error   = true;
-                }
+                } else {
+                    try {
+                        if ($idChamcong > 0) {
+                            $ok = $model->update($idChamcong, $data);
+                            $message = $ok ? "Cập nhật chấm công thành công!" : "Lỗi khi cập nhật!";
+                            $error   = !$ok;
+                        } else {
+                            $ok = $model->insert($data);
+                            $message = $ok ? "Thêm chấm công thành công!" : "Lỗi khi thêm!";
+                            $error   = !$ok;
+                        }
+                    } catch (Exception $e) {
+                        $message = "Lỗi: " . $e->getMessage();
+                        $error   = true;
+                    }
 
-                if (!$error && $idChamcong === 0) {
-                   header("Location: index.php?controller=Chamcong&message=" . urlencode($message));
-
-                    exit();
+                    if (!$error && $idChamcong === 0) {
+                        header("Location: index.php?controller=Chamcong&message=" . urlencode($message));
+                        exit();
+                    }
                 }
             }
         }

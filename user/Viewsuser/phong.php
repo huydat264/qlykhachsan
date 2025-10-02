@@ -75,7 +75,7 @@ $initialCategory = isset($_GET['loai']) ? strtolower($_GET['loai']) : 'all';
                     ?>
                     <div class="room-item" data-category="<?php echo strtolower($room['loai_phong']); ?>">
                         <a href="chitietphong.php?id=<?php echo $room['id_phong']; ?>" class="room-link">
-                            <img src="../../images/<?php echo $room['hinh_anh']; ?>" alt="<?php echo $room['so_phong']; ?>" class="room-image">
+                            <img src="../../images/<?php echo $room['anh']; ?>" alt="<?php echo $room['so_phong']; ?>" class="room-image">
                             <h3 class="room-name">Phòng <?php echo $room['so_phong']; ?> - <?php echo $room['loai_phong']; ?></h3>
                         </a>
                         <p class="room-description"><?php echo $room['mo_ta'] ?? 'Chưa có mô tả'; ?></p>

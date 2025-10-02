@@ -29,9 +29,8 @@ class QuanlybangluongController1
             $tong_luong = 0;
 
             if ($luong_cb > 0) {
-                $days = cal_days_in_month(CAL_GREGORIAN, $thang, $nam);
-                $luong_ngay = $luong_cb / max($days,1);
-                $tong_luong = ($luong_ngay * $so_cong) + $thuong - $phat;
+                // --- Gọi hàm tinhTongLuong mới trong model ---
+                $tong_luong = $model->tinhTongLuong($id_nv, $thang, $nam, $thuong, $phat);
             } else {
                 $message = "Không tìm thấy lương cơ bản hoặc dữ liệu không hợp lệ.";
                 $error = true;

@@ -78,9 +78,10 @@ if (!isset($isAdmin)) $isAdmin = false;
 
                 <div class="flex flex-col">
                     <label for="so_ngay_di_lam" class="mb-2 text-sm font-medium text-gray-700">Số ngày đi làm:</label>
-                    <input type="number" id="so_ngay_di_lam" name="so_ngay_di_lam" min="0" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                           value="<?= $editData ? htmlspecialchars($editData['so_ngay_di_lam']) : '' ?>">
+                   <input type="number" id="so_ngay_di_lam" name="so_ngay_di_lam" min="0" required
+       class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+       value="<?= $editData ? htmlspecialchars($editData['so_ngay_di_lam']) : '' ?>">
+
                 </div>
 
                 <div class="flex flex-col">
@@ -171,13 +172,26 @@ if (!isset($isAdmin)) $isAdmin = false;
 </main>
 
 <script>
-    const alertMessage = document.getElementById('alert-message');
-    if (alertMessage) {
-        setTimeout(() => {
-            alertMessage.style.opacity = '0';
-            setTimeout(() => { alertMessage.remove(); }, 500);
-        }, 5000);
+document.addEventListener("DOMContentLoaded", function () {
+    const thangInput = document.getElementById("thang");
+    const namInput = document.getElementById("nam");
+    const ngayDiLamInput = document.getElementById("so_ngay_di_lam");
+
+    function updateMaxDays() {
+        const thang = parseInt(thangInput.value) || 1;
+        const nam = parseInt(namInput.value) || new Date().getFullYear();
+
+        // Tính số ngày trong tháng
+        const daysInMonth = new Date(nam, thang, 0).getDate();
+
+        ngayDiLamInput.max = daysInMonth; // gán max động
     }
+
+    thangInput.addEventListener("input", updateMaxDays);
+    namInput.addEventListener("input", updateMaxDays);
+
+    updateMaxDays(); // chạy lần đầu khi load trang
+});
 </script>
 
 <?php @include __DIR__ . '/layouts/footer.php'; ?>

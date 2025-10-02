@@ -22,25 +22,31 @@ class SudungdichvuController1 {
      */
     public function index() {
         $message = '';
-        // Lấy thông báo từ session (nếu có) sau khi thêm/sửa
         if (isset($_SESSION['message'])) {
             $message = $_SESSION['message'];
-            unset($_SESSION['message']); // Xóa message để không hiển thị lại
+            unset($_SESSION['message']);
         }
 
         $edit_data = null;
-        // Kiểm tra nếu có yêu cầu sửa
         if (isset($_GET['sua'])) {
             $id_sudungdv = (int)$_GET['sua'];
             $edit_data = $this->model->getSudungdvById($id_sudungdv);
         }
 
-        // Lấy toàn bộ dữ liệu cần thiết cho view
-        $phong_dat_result = $this->model->getPhongDat();
-        $dichvu_result    = $this->model->getAllDichVu();
-        $sudungdv_result  = $this->model->getAllSudungdv();
+        // Lấy từ khóa tìm kiếm từ input
+        $search = $_GET['search'] ?? '';
 
-        // Gọi view để hiển thị
+        // Lấy dữ liệu phòng và dịch vụ
+        $phong_dat_result = $this->model->getPhongDat();
+        $dichvu_result    = $this->model->searchDichVu($search); 
+
+        // Nếu có từ khóa tìm kiếm thì lọc, ngược lại lấy toàn bộ
+        if (!empty($search)) {
+            $sudungdv_result = $this->model->searchSudungdv($search);
+        } else {
+            $sudungdv_result = $this->model->getAllSudungdv();
+        }
+
         include __DIR__ . '/../views/sudungdichvu.php';
     }
 

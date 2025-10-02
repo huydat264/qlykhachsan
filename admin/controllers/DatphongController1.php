@@ -48,26 +48,64 @@ class DatphongController1 {
     }
 
     // Thêm đặt phòng
-    private function add($post) {
-        try {
-            $this->datphongModel->add($post);
-            echo "<script>alert('Đặt phòng thành công!');window.location='index.php?controller=datphong';</script>";
-            exit;
-        } catch (Exception $e) {
-            echo "<script>alert('Lỗi: ".$e->getMessage()."');</script>";
-        }
-    }
+private function add($post) {
+    try {
+        $ngayNhan = $post['ngay_nhan'] ?? null;
+        $ngayTra  = $post['ngay_tra'] ?? null;
 
-    // Cập nhật đặt phòng
-    private function update($post) {
-        try {
-            $this->datphongModel->update($post['id_datphong'], $post);
-            echo "<script>alert('Cập nhật thành công!');window.location='index.php?controller=datphong';</script>";
-            exit;
-        } catch (Exception $e) {
-            echo "<script>alert('Lỗi: ".$e->getMessage()."');</script>";
+        if (!$ngayNhan || !$ngayTra) {
+            throw new Exception("Vui lòng nhập ngày nhận và ngày trả!");
         }
+
+        $dateNhan = DateTime::createFromFormat('Y-m-d', $ngayNhan);
+        $dateTra  = DateTime::createFromFormat('Y-m-d', $ngayTra);
+
+        if (!$dateNhan || !$dateTra) {
+            throw new Exception("Định dạng ngày không hợp lệ!");
+        }
+
+        if ($dateTra <= $dateNhan) {
+            throw new Exception("❌ Ngày trả phòng phải lớn hơn ngày nhận phòng!");
+        }
+
+        $this->datphongModel->add($post);
+        echo "<script>alert('Đặt phòng thành công!');window.location='index.php?controller=datphong';</script>";
+        exit;
+
+    } catch (Exception $e) {
+        echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
     }
+}
+
+// Cập nhật đặt phòng
+private function update($post) {
+    try {
+        $ngayNhan = $post['ngay_nhan'] ?? null;
+        $ngayTra  = $post['ngay_tra'] ?? null;
+
+        if (!$ngayNhan || !$ngayTra) {
+            throw new Exception("Vui lòng nhập ngày nhận và ngày trả!");
+        }
+
+        $dateNhan = DateTime::createFromFormat('Y-m-d', $ngayNhan);
+        $dateTra  = DateTime::createFromFormat('Y-m-d', $ngayTra);
+
+        if (!$dateNhan || !$dateTra) {
+            throw new Exception("Định dạng ngày không hợp lệ!");
+        }
+
+        if ($dateTra <= $dateNhan) {
+            throw new Exception("❌ Ngày trả phòng phải lớn hơn ngày nhận phòng!");
+        }
+
+        $this->datphongModel->update($post['id_datphong'], $post);
+        echo "<script>alert('Cập nhật thành công!');window.location='index.php?controller=datphong';</script>";
+        exit;
+
+    } catch (Exception $e) {
+        echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
+    }
+}
 
     // Xóa đặt phòng
     private function delete($id) {

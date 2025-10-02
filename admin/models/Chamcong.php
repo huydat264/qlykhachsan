@@ -1,7 +1,5 @@
 <?php
 // models/Chamcong.php
-// Sửa để dùng Database::getConnection() (PDO) thay vì getInstance()
-
 require_once __DIR__ . '/../config/database.php';
 
 class Chamcong
@@ -11,24 +9,15 @@ class Chamcong
 
     public function __construct()
     {
-        // Database::getConnection() phải trả về một PDO (theo database.php bạn đã cung cấp trước)
         $this->db = Database::getConnection();
     }
 
-    /**
-     * Lấy danh sách nhân viên (id, ho_ten)
-     * @return array
-     */
     public function getNhanVienList(): array
     {
         $stmt = $this->db->query("SELECT id_nhanvien, ho_ten FROM nhanvien ORDER BY ho_ten");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Lấy tất cả bản ghi chấm công kèm tên nhân viên
-     * @return array
-     */
     public function getChamcongList(): array
     {
         $sql = "SELECT cc.*, nv.ho_ten
@@ -39,11 +28,6 @@ class Chamcong
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Lấy chấm công theo id
-     * @param int $id
-     * @return array|null
-     */
     public function getById(int $id): ?array
     {
         $stmt = $this->db->prepare("SELECT * FROM chamcong WHERE id_chamcong = :id");
@@ -53,37 +37,103 @@ class Chamcong
     }
 
     /**
+     * Chuẩn hoá dữ liệu đầu vào (tránh chuỗi rỗng -> (int) = 0)
+     */
+    private function sanitize(array $data): array
+    {
+        return [
+            'id_nhanvien' => isset($data['id_nhanvien']) ? (int)$data['id_nhanvien'] : 0,
+            'thang' => isset($data['thang']) ? (int)$data['thang'] : 0,
+            'nam' => isset($data['nam']) ? (int)$data['nam'] : 0,
+            'so_ngay_di_lam' => isset($data['so_ngay_di_lam']) ? (int)$data['so_ngay_di_lam'] : 0,
+            'so_ngay_nghi_co_phep' => isset($data['so_ngay_nghi_co_phep']) ? (int)$data['so_ngay_nghi_co_phep'] : 0,
+            'so_ngay_nghi_khong_phep' => isset($data['so_ngay_nghi_khong_phep']) ? (int)$data['so_ngay_nghi_khong_phep'] : 0,
+        ];
+    }
+
+    /**
+     * Kiểm tra tháng/năm hợp lệ
+     */
+    private function validateMonthYear(int $thang, int $nam): void
+    {
+        if ($thang < 1 || $thang > 12) {
+            throw new Exception("Tháng không hợp lệ. Vui lòng chọn tháng từ 1 đến 12.");
+        }
+        if ($nam < 1900 || $nam > 3000) {
+            throw new Exception("Năm không hợp lệ.");
+        }
+    }
+
+    /**
+     * Validate số ngày (không âm, tổng <= số ngày thực tế của tháng)
+     */
+    private function validateDays(array $data): void
+    {
+        $thang = $data['thang'];
+        $nam = $data['nam'];
+
+        // kiểm tra tháng/năm hợp lệ trước
+        $this->validateMonthYear($thang, $nam);
+
+        // số ngày thực tế của tháng (tự xử lý leap year)
+        $max_days = cal_days_in_month(CAL_GREGORIAN, $thang, $nam);
+
+        $di_lam = $data['so_ngay_di_lam'];
+        $nghi_co = $data['so_ngay_nghi_co_phep'];
+        $nghi_khong = $data['so_ngay_nghi_khong_phep'];
+
+        // không cho âm
+        if ($di_lam < 0 || $nghi_co < 0 || $nghi_khong < 0) {
+            throw new Exception("Số ngày không được là số âm.");
+        }
+
+        // kiểm tra từng trường có hợp lý (ví dụ 100 ngày là vô lý)
+        if ($di_lam > $max_days || $nghi_co > $max_days || $nghi_khong > $max_days) {
+            throw new Exception("Một trong các trường số ngày vượt quá số ngày tối đa của tháng ($max_days).");
+        }
+
+        $tong = $di_lam + $nghi_co + $nghi_khong;
+
+        if ($tong > $max_days) {
+            throw new Exception("Tổng số ngày ($tong) vượt quá số ngày của tháng $thang/$nam ($max_days).");
+        }
+    }
+
+    /**
      * Thêm bản ghi chấm công
-     * @param array $data
-     * @return bool
-     * @throws PDOException
      */
     public function insert(array $data): bool
     {
+        $data = $this->sanitize($data);
+
+        // validate trước khi insert
+        $this->validateDays($data);
+
         $sql = "INSERT INTO chamcong
                 (id_nhanvien, thang, nam, so_ngay_di_lam, so_ngay_nghi_co_phep, so_ngay_nghi_khong_phep)
                 VALUES (:id_nhanvien, :thang, :nam, :so_ngay_di_lam, :so_ngay_nghi_co_phep, :so_ngay_nghi_khong_phep)";
 
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            'id_nhanvien' => (int)$data['id_nhanvien'],
-            'thang' => (int)$data['thang'],
-            'nam' => (int)$data['nam'],
-            'so_ngay_di_lam' => (int)$data['so_ngay_di_lam'],
-            'so_ngay_nghi_co_phep' => (int)$data['so_ngay_nghi_co_phep'],
-            'so_ngay_nghi_khong_phep' => (int)$data['so_ngay_nghi_khong_phep'],
+            'id_nhanvien' => $data['id_nhanvien'],
+            'thang' => $data['thang'],
+            'nam' => $data['nam'],
+            'so_ngay_di_lam' => $data['so_ngay_di_lam'],
+            'so_ngay_nghi_co_phep' => $data['so_ngay_nghi_co_phep'],
+            'so_ngay_nghi_khong_phep' => $data['so_ngay_nghi_khong_phep'],
         ]);
     }
 
     /**
      * Cập nhật bản ghi chấm công
-     * @param int $id
-     * @param array $data
-     * @return bool
-     * @throws PDOException
      */
     public function update(int $id, array $data): bool
     {
+        $data = $this->sanitize($data);
+
+        // validate trước khi update
+        $this->validateDays($data);
+
         $sql = "UPDATE chamcong SET
                     id_nhanvien = :id_nhanvien,
                     thang = :thang,
@@ -95,12 +145,12 @@ class Chamcong
 
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            'id_nhanvien' => (int)$data['id_nhanvien'],
-            'thang' => (int)$data['thang'],
-            'nam' => (int)$data['nam'],
-            'so_ngay_di_lam' => (int)$data['so_ngay_di_lam'],
-            'so_ngay_nghi_co_phep' => (int)$data['so_ngay_nghi_co_phep'],
-            'so_ngay_nghi_khong_phep' => (int)$data['so_ngay_nghi_khong_phep'],
+            'id_nhanvien' => $data['id_nhanvien'],
+            'thang' => $data['thang'],
+            'nam' => $data['nam'],
+            'so_ngay_di_lam' => $data['so_ngay_di_lam'],
+            'so_ngay_nghi_co_phep' => $data['so_ngay_nghi_co_phep'],
+            'so_ngay_nghi_khong_phep' => $data['so_ngay_nghi_khong_phep'],
             'id' => $id
         ]);
     }

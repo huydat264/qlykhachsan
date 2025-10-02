@@ -13,7 +13,7 @@ class PhongModel {
     }
 
 public function getAllRooms() {
-    $sql = "SELECT id_phong, so_phong, loai_phong, gia_phong, mo_ta, hinh_anh, trang_thai FROM phong";
+    $sql = "SELECT id_phong, so_phong, loai_phong, gia_phong, mo_ta, anh, trang_thai FROM phong";
     $result = $this->conn->query($sql);
     $rooms = [];
     if ($result->num_rows > 0) {
@@ -25,7 +25,7 @@ public function getAllRooms() {
 }
 
 public function getRoomsByCategory($category) {
-    $sql = "SELECT id_phong, so_phong, loai_phong, gia_phong, mo_ta, hinh_anh, trang_thai FROM phong WHERE loai_phong = ?";
+    $sql = "SELECT id_phong, so_phong, loai_phong, gia_phong, mo_ta, anh, trang_thai FROM phong WHERE loai_phong = ?";
     $stmt = $this->conn->prepare($sql);
     $stmt->bind_param("s", $category);
     $stmt->execute();
@@ -41,7 +41,7 @@ public function getRoomsByCategory($category) {
 }
 
 public function getRoomById($id) {
-    $sql = "SELECT id_phong, so_phong, loai_phong, gia_phong, so_luong_nguoi, mo_ta, hinh_anh, trang_thai 
+    $sql = "SELECT id_phong, so_phong, loai_phong, gia_phong, so_luong_nguoi, mo_ta, anh, trang_thai 
             FROM phong WHERE id_phong = ?";
     $stmt = $this->conn->prepare($sql);
     $stmt->bind_param("i", $id);

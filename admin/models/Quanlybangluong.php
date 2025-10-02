@@ -43,6 +43,41 @@ class Quanlybangluong
         return (int)($stmt->fetchColumn() ?: 0);
     }
 
+    /** Tính tổng lương dựa vào bảng chấm công, thưởng và phạt */
+    public function tinhTongLuong(int $id_nhanvien, int $thang, int $nam, float $thuong = 0, float $phat = 0): float
+{
+    $luong_cb = $this->getLuongCoBan($id_nhanvien);
+
+    $stmt = $this->conn->prepare(
+        "SELECT so_ngay_di_lam, so_ngay_nghi_co_phep, so_ngay_nghi_khong_phep
+         FROM chamcong
+         WHERE id_nhanvien = :id AND thang = :thang AND nam = :nam"
+    );
+    $stmt->execute([
+        ':id' => $id_nhanvien,
+        ':thang' => $thang,
+        ':nam' => $nam
+    ]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $so_ngay_di_lam = (int)($row['so_ngay_di_lam'] ?? 0);
+    $so_ngay_nghi_co_phep = (int)($row['so_ngay_nghi_co_phep'] ?? 0);
+    $so_ngay_nghi_khong_phep = (int)($row['so_ngay_nghi_khong_phep'] ?? 0);
+
+    $luong_ngay = $luong_cb / 26;
+
+    // Nghỉ phép vượt 1 ngày sẽ bị trừ
+    $tien_tru_nghi_phep = max($so_ngay_nghi_co_phep - 1, 0) * $luong_ngay;
+
+    // Nghỉ không phép trừ đầy đủ
+    $tien_tru_nghi_khong_phep = $so_ngay_nghi_khong_phep * $luong_ngay;
+
+    $tong = ($luong_ngay * $so_ngay_di_lam) - $tien_tru_nghi_phep - $tien_tru_nghi_khong_phep + $thuong - $phat;
+
+    return round($tong, 0);
+}
+
+
     /** Thêm bản ghi bảng lương */
     public function insert(array $data): bool
     {

@@ -1,75 +1,143 @@
 <?php
 class Nhanvien {
     private $conn;
-    private $table = 'nhanvien';
 
-    public function __construct(PDO $conn) {
-        $this->conn = $conn;
+    public function __construct($db) {
+        $this->conn = $db;
     }
 
-    // Lấy tất cả nhân viên, hỗ trợ tìm kiếm
-    public function getAll($search = '') {
-    $sql = "SELECT * FROM nhanvien";
-    $params = [];
-
-    if (!empty($search)) {
-        $sql .= " WHERE ho_ten LIKE ? OR chuc_vu LIKE ?";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
-    }
-
+    // Lấy danh sách nhân viên
+    // Lấy danh sách nhân viên (tìm kiếm theo tên hoặc chức vụ)
+public function getAll($search = '') {
+    $sql = "SELECT nv.*, tk.username, tk.role 
+            FROM nhanvien nv
+            LEFT JOIN taikhoan tk ON nv.tai_khoan_nhanvien_id = tk.id_taikhoan
+            WHERE nv.ho_ten LIKE :search OR nv.chuc_vu LIKE :search";
     $stmt = $this->conn->prepare($sql);
-    $stmt->execute($params);
+    $stmt->execute([':search' => "%$search%"]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 
-    // Lấy 1 nhân viên theo ID
+    // Lấy nhân viên theo ID
     public function getById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM `$this->table` WHERE id_nhanvien = :id");
+        $sql = "SELECT * FROM nhanvien WHERE id_nhanvien = :id";
+        $stmt = $this->conn->prepare($sql);
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    // Kiểm tra tài khoản tồn tại và role = NHANVIEN
+    public function validateTaiKhoanNhanvien($id_taikhoan) {
+        $sql = "SELECT * FROM taikhoan WHERE id_taikhoan = :id AND role = 'NHANVIEN'";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':id' => $id_taikhoan]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
+    }
+
+    // Validate số điện thoại
+    private function validatePhone($phone) {
+        return preg_match('/^[0-9]{9,15}$/', $phone);
+    }
+
+    // Validate email
+    private function validateEmail($email) {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
+    // Validate chức vụ (không được bỏ trống)
+    private function validateChucVu($chuc_vu) {
+        return !empty(trim($chuc_vu));
+    }
+
+    // Validate lương cơ bản (≥0)
+    private function validateLuong($luong) {
+        return is_numeric($luong) && $luong >= 0;
+    }
+
     // Thêm nhân viên
     public function create($data) {
-        $sql = "INSERT INTO `$this->table`
-            (tai_khoan_nhanvien_id, ho_ten, chuc_vu, luong_co_ban, ngay_vao_lam, so_dien_thoai, email)
-            VALUES (:tai_khoan_nhanvien_id, :ho_ten, :chuc_vu, :luong_co_ban, :ngay_vao_lam, :so_dien_thoai, :email)";
+        if (!$this->validateTaiKhoanNhanvien($data['tai_khoan_nhanvien_id'])) {
+            $_SESSION['error'] = "❌ ID tài khoản không tồn tại hoặc không phải là NHÂN VIÊN!";
+            return false;
+        }
+        if (!$this->validatePhone($data['so_dien_thoai'])) {
+            $_SESSION['error'] = "❌ Số điện thoại không hợp lệ!";
+            return false;
+        }
+        if (!$this->validateEmail($data['email'])) {
+            $_SESSION['error'] = "❌ Email không hợp lệ!";
+            return false;
+        }
+        if (!$this->validateChucVu($data['chuc_vu'])) {
+            $_SESSION['error'] = "❌ Chức vụ không được bỏ trống!";
+            return false;
+        }
+        if (!$this->validateLuong($data['luong_co_ban'])) {
+            $_SESSION['error'] = "❌ Lương cơ bản không được là số âm!";
+            return false;
+        }
+
+        $sql = "INSERT INTO nhanvien 
+            (ho_ten, chuc_vu, luong_co_ban, ngay_vao_lam, so_dien_thoai, email, tai_khoan_nhanvien_id)
+            VALUES (:ho_ten, :chuc_vu, :luong_co_ban, :ngay_vao_lam, :so_dien_thoai, :email, :tk_id)";
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute([
-            ':tai_khoan_nhanvien_id' => $data['tai_khoan_nhanvien_id'],
-            ':ho_ten' => $data['ho_ten'],
-            ':chuc_vu' => $data['chuc_vu'],
-            ':luong_co_ban' => $data['luong_co_ban'],
-            ':ngay_vao_lam' => $data['ngay_vao_lam'],
+        return $stmt->execute([
+            ':ho_ten'        => $data['ho_ten'],
+            ':chuc_vu'       => $data['chuc_vu'],
+            ':luong_co_ban'  => $data['luong_co_ban'],
+            ':ngay_vao_lam'  => $data['ngay_vao_lam'],
             ':so_dien_thoai' => $data['so_dien_thoai'],
-            ':email' => $data['email']
+            ':email'         => $data['email'],
+            ':tk_id'         => $data['tai_khoan_nhanvien_id']
         ]);
-        return $this->conn->lastInsertId();
     }
 
     // Cập nhật nhân viên
     public function update($id, $data) {
-        $sql = "UPDATE `$this->table` SET
-            tai_khoan_nhanvien_id = :tai_khoan_nhanvien_id,
-            ho_ten = :ho_ten,
-            chuc_vu = :chuc_vu,
-            luong_co_ban = :luong_co_ban,
-            ngay_vao_lam = :ngay_vao_lam,
-            so_dien_thoai = :so_dien_thoai,
-            email = :email
-            WHERE id_nhanvien = :id";
+        if (!$this->validateTaiKhoanNhanvien($data['tai_khoan_nhanvien_id'])) {
+            $_SESSION['error'] = "❌ ID tài khoản không tồn tại hoặc không phải là NHÂN VIÊN!";
+            return false;
+        }
+        if (!$this->validatePhone($data['so_dien_thoai'])) {
+            $_SESSION['error'] = "❌ Số điện thoại không hợp lệ!";
+            return false;
+        }
+        if (!$this->validateEmail($data['email'])) {
+            $_SESSION['error'] = "❌ Email không hợp lệ!";
+            return false;
+        }
+        if (!$this->validateChucVu($data['chuc_vu'])) {
+            $_SESSION['error'] = "❌ Chức vụ không được bỏ trống!";
+            return false;
+        }
+        if (!$this->validateLuong($data['luong_co_ban'])) {
+            $_SESSION['error'] = "❌ Lương cơ bản không được là số âm!";
+            return false;
+        }
+
+        $sql = "UPDATE nhanvien SET 
+                    ho_ten = :ho_ten, chuc_vu = :chuc_vu, luong_co_ban = :luong_co_ban,
+                    ngay_vao_lam = :ngay_vao_lam, so_dien_thoai = :so_dien_thoai, 
+                    email = :email, tai_khoan_nhanvien_id = :tk_id
+                WHERE id_nhanvien = :id";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute([
-            ':tai_khoan_nhanvien_id' => $data['tai_khoan_nhanvien_id'],
-            ':ho_ten' => $data['ho_ten'],
-            ':chuc_vu' => $data['chuc_vu'],
-            ':luong_co_ban' => $data['luong_co_ban'],
-            ':ngay_vao_lam' => $data['ngay_vao_lam'],
+            ':ho_ten'        => $data['ho_ten'],
+            ':chuc_vu'       => $data['chuc_vu'],
+            ':luong_co_ban'  => $data['luong_co_ban'],
+            ':ngay_vao_lam'  => $data['ngay_vao_lam'],
             ':so_dien_thoai' => $data['so_dien_thoai'],
-            ':email' => $data['email'],
-            ':id' => $id
+            ':email'         => $data['email'],
+            ':tk_id'         => $data['tai_khoan_nhanvien_id'],
+            ':id'            => $id
         ]);
+    }
+
+    // Xóa nhân viên
+    public function delete($id) {
+        $sql = "DELETE FROM nhanvien WHERE id_nhanvien = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([':id' => $id]);
     }
 }

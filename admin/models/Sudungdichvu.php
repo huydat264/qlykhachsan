@@ -24,13 +24,6 @@ class Sudungdichvu {
         ]);
     }
 
-    // ================================================================
-    // CÁC PHƯƠ...C MỚI Đ...ỢC THÊM VÀO ĐỂ SỬA DỮ LIỆU
-    // ================================================================
-
-    /**
-     * Lấy thông tin một lần sử dụng dịch vụ bằng ID
-     */
     public function getSudungdvById($id_sudungdv) {
         $sql = "SELECT * FROM sudungdichvu WHERE id_sudungdv = :id";
         $stmt = $this->pdo->prepare($sql);
@@ -38,9 +31,6 @@ class Sudungdichvu {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Cập nhật thông tin sử dụng dịch vụ
-     */
     public function updateSudungdv($id_sudungdv, $id_datphong, $id_dichvu, $so_luong, $thanh_tien) {
         $sql = "UPDATE sudungdichvu SET
                     id_datphong = :id_datphong,
@@ -57,10 +47,6 @@ class Sudungdichvu {
             ':id_sudungdv' => $id_sudungdv
         ]);
     }
-
-    // ================================================================
-    // CÁC PHƯƠ...C CŨ VẪN GIỮ NGUYÊN
-    // ================================================================
 
     public function getPhongDat() {
         $sql = "SELECT datphong.*, phong.so_phong, khachhang.ho_ten
@@ -86,5 +72,31 @@ class Sudungdichvu {
                 ORDER BY sudungdichvu.id_sudungdv DESC";
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
-}
 
+    // ======================= HÀM TÌM KIẾM DỊCH VỤ =======================
+    public function searchDichVu($keyword = '') {
+        $sql = "SELECT * FROM dichvu 
+                WHERE ten_dich_vu LIKE :keyword
+                ORDER BY ten_dich_vu";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':keyword' => "%$keyword%"]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ======================= HÀM TÌM KIẾM DỊCH VỤ ĐÃ SỬ DỤNG =======================
+    public function searchSudungdv($keyword = '') {
+        $sql = "SELECT sudungdichvu.*, phong.so_phong, dichvu.ten_dich_vu, dichvu.gia, khachhang.ho_ten
+                FROM sudungdichvu
+                JOIN datphong ON sudungdichvu.id_datphong = datphong.id_datphong
+                JOIN dichvu ON sudungdichvu.id_dichvu = dichvu.id_dichvu
+                JOIN phong ON datphong.id_phong = phong.id_phong
+                JOIN khachhang ON datphong.id_khachhang = khachhang.id_khachhang
+                WHERE dichvu.ten_dich_vu LIKE :keyword
+                   OR khachhang.ho_ten LIKE :keyword
+                   OR phong.so_phong LIKE :keyword
+                ORDER BY sudungdichvu.id_sudungdv DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':keyword' => "%$keyword%"]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
