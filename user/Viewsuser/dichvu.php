@@ -15,7 +15,7 @@ if (!isset($dichvus)) {
             font-family: "Poppins", Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background: url('https://cdn.vietnambiz.vn/2019/11/4/hotel-security-london-15728559445071765810802.jpg') no-repeat center center fixed;
+            background: url('https://images.pexels.com/photos/20975726/pexels-photo-20975726.jpeg') no-repeat center center fixed;
             background-size: cover;
             color: #333;
         }
@@ -29,7 +29,7 @@ if (!isset($dichvus)) {
         h1 {
             text-align: center;
             margin-bottom: 40px;
-            color: #002060;
+            color: #edfe00ff;
             font-size: 36px;
             font-weight: 700;
             position: relative;
@@ -42,9 +42,9 @@ if (!isset($dichvus)) {
             bottom: -10px;
             left: 50%;
             transform: translateX(-50%);
-            width: 80px;
+            width: 150px;
             height: 4px;
-            background: #007BFF;
+            background: #e5d417ff;
             border-radius: 2px;
         }
 

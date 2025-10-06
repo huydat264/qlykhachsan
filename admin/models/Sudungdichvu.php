@@ -49,11 +49,18 @@ class Sudungdichvu {
     }
 
     public function getPhongDat() {
-        $sql = "SELECT datphong.*, phong.so_phong, khachhang.ho_ten
-                FROM datphong
-                JOIN phong ON datphong.id_phong = phong.id_phong
-                JOIN khachhang ON datphong.id_khachhang = khachhang.id_khachhang
-                WHERE phong.trang_thai = 'Đã đặt'";
+        // Lấy bản ghi đặt phòng mới nhất có trạng thái 'Đã xác nhận' cho mỗi phòng
+        $sql = "SELECT dp.*, p.so_phong, kh.ho_ten
+                FROM datphong dp
+                JOIN (
+                    SELECT id_phong, MAX(id_datphong) AS max_id
+                    FROM datphong
+                    WHERE trang_thai = 'Đã xác nhận'
+                    GROUP BY id_phong
+                ) latest ON dp.id_phong = latest.id_phong AND dp.id_datphong = latest.max_id
+                JOIN phong p ON dp.id_phong = p.id_phong
+                JOIN khachhang kh ON dp.id_khachhang = kh.id_khachhang
+                WHERE dp.trang_thai = 'Đã xác nhận'";
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 

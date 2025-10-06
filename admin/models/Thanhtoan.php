@@ -18,9 +18,17 @@ class Thanhtoan {
                 dp.ngay_nhan,
                 dp.ngay_tra
             FROM phong p
-            LEFT JOIN datphong dp ON p.id_phong = dp.id_phong
+            JOIN (
+                SELECT d1.* FROM datphong d1
+                INNER JOIN (
+                    SELECT id_phong, MAX(id_datphong) AS max_id
+                    FROM datphong
+                    WHERE trang_thai = 'Đã xác nhận'
+                    GROUP BY id_phong
+                ) d2 ON d1.id_phong = d2.id_phong AND d1.id_datphong = d2.max_id
+            ) dp ON p.id_phong = dp.id_phong
             LEFT JOIN sudungdichvu sdv ON dp.id_datphong = sdv.id_datphong
-            WHERE LOWER(TRIM(p.trang_thai)) = 'đã đặt' AND dp.id_datphong IS NOT NULL
+            WHERE LOWER(TRIM(p.trang_thai)) = 'đã đặt'
             GROUP BY p.id_phong, p.so_phong, p.gia_phong, dp.id_datphong, dp.ngay_nhan, dp.ngay_tra
         ";
         $stmt = $this->pdo->prepare($sql);

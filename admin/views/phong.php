@@ -243,23 +243,34 @@
     </div>
 
     <!-- Form chỉnh sửa -->
+<!-- Form chỉnh sửa -->
 <?php if (!empty($data['edit_data'])): ?>
 <div class="form-box">
     <h3><i class="fas fa-edit"></i> Chỉnh sửa phòng #<?= htmlspecialchars($data['edit_data']['id_phong']) ?></h3>
+
+    <!-- Hiển thị lỗi nếu có -->
+    <?php if (!empty($data['error'])): ?>
+        <p style="color:red; font-weight: bold; margin-bottom: 15px;">
+            <?= htmlspecialchars($data['error']) ?>
+        </p>
+    <?php endif; ?>
+
     <form method="post" action="?controller=phong&action=update">
         <input type="hidden" name="id_phong" value="<?= htmlspecialchars($data['edit_data']['id_phong']) ?>">
         <div class="form-row">
-            <input type="text" name="so_phong" placeholder="Số phòng" 
-                   value="<?= htmlspecialchars($data['edit_data']['so_phong']) ?>" required>
+            <input type="number" name="so_phong" placeholder="Số phòng" 
+                   value="<?= htmlspecialchars($data['edit_data']['so_phong']) ?>" min="1" required>
             <select name="loai_phong">
                 <option value="Standard" <?= $data['edit_data']['loai_phong']=='Standard'?'selected':'' ?>>Standard</option>
                 <option value="Deluxe" <?= $data['edit_data']['loai_phong']=='Deluxe'?'selected':'' ?>>Deluxe</option>
                 <option value="Suite" <?= $data['edit_data']['loai_phong']=='Suite'?'selected':'' ?>>Suite</option>
             </select>
-            <input type="number" name="gia_phong" placeholder="Giá phòng" 
-                   value="<?= htmlspecialchars($data['edit_data']['gia_phong']) ?>" required>
+            <input type="text" name="gia_phong" 
+       value="<?= isset($edit_data['gia_phong']) ? intval($edit_data['gia_phong']) : '' ?>">
+
+
             <input type="number" name="so_luong_nguoi" placeholder="Số người tối đa" 
-                   value="<?= htmlspecialchars($data['edit_data']['so_luong_nguoi']) ?>" required>
+                   value="<?= htmlspecialchars($data['edit_data']['so_luong_nguoi']) ?>" min="1" required>
             <select name="trang_thai">
                 <option value="Trống" <?= $data['edit_data']['trang_thai']=='Trống'?'selected':'' ?>>Trống</option>
                 <option value="Đang đặt" <?= $data['edit_data']['trang_thai']=='Đang đặt'?'selected':'' ?>>Đang đặt</option>
@@ -279,6 +290,7 @@
     </form>
 </div>
 <?php endif; ?>
+
 
 <!-- Bảng danh sách phòng -->
 <table>

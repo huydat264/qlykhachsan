@@ -13,20 +13,22 @@ class BaocaoController1
         $model  = new Baocao();
 
         $data = [
-            'filter'            => $filter,
-            'totalPhong'        => $model->getTotalPhong(),
-            'phongTrong'        => $model->getPhongByStatus('Trống'),
-            'phongDangDat'      => $model->getPhongByStatus('Đã đặt'),
-            'phongBaoTri'       => $model->getPhongByStatus('Bảo trì'),
-            'doanhThuThucTe'    => $model->getDoanhThuThucTe($filter),
-            'nhanVienByRole'    => $model->getNhanVienByRole(),
-            'khachHangByGender' => $model->getKhachHangByGender(),
-            'dichVuRevenueData' => $model->getDichVuRevenue(),
-            'vipKhachHangData'  => $model->getVipKhachHang(),
-            'totalKhachHang'    => $model->getTotalKhachHang(),
-            'totalDichVu'       => $model->getTotalDichVu(),
-            'totalNhanVien'     => $model->getTotalNhanVien()
-        ];
+    'filter'            => $filter,
+    'totalPhong'        => $model->getTotalPhong(),
+    'phongTrong'        => $model->getPhongByStatus('Trống'),
+    'phongDangDat'      => $model->getPhongByStatus('Đã đặt'),
+    'phongBaoTri'       => $model->getPhongByStatus('Bảo trì'),
+    'doanhThuThucTe'    => $model->getDoanhThuThucTe($filter),
+    'nhanVienByRole'    => $model->getNhanVienByRole(),
+    'khachHangByGender' => $model->getKhachHangByGender(),
+    'dichVuRevenueData' => $model->getDichVuRevenue(),
+    'vipKhachHangData'  => $model->getVipKhachHang(),
+    'totalKhachHang'    => $model->getTotalKhachHang(),
+    'totalDichVu'       => $model->getTotalDichVu(),
+    'totalNhanVien'     => $model->getTotalNhanVien(),
+    'tongChiTieu'       => $model->getTongChiTieu() // 👉 thêm dòng này
+];
+
 
         // Giải nén mảng $data thành các biến để view dùng trực tiếp
         extract($data);

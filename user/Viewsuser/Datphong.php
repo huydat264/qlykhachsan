@@ -12,7 +12,7 @@ include 'header.php';
     <style>
         body {
     font-family: 'Roboto', sans-serif;
-    background: url('https://quayletanhd.com/wp-content/uploads/2023/04/quay-le-tan-khach-san-5.jpg') no-repeat center center fixed;
+    background: url('https://images.pexels.com/photos/24807126/pexels-photo-24807126.jpeg') no-repeat center center fixed;
     background-size: cover; /* cho full màn hình */
     margin: 0;
     padding: 0;

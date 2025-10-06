@@ -76,7 +76,10 @@ $trangthai = trim($room['trang_thai']); // loại bỏ khoảng trắng dư
 <body>
     <div class="room-detail">
         <div class="room-image">
-            <img src="../../images/<?php echo $room['anh']; ?>" alt="<?php echo $room['so_phong']; ?>">
+           <img src="<?php echo htmlspecialchars($room['anh']); ?>" 
+     alt="Ảnh phòng" 
+     style="width: 450px; height: 260px; object-fit: cover; border-radius: 10px;">
+
         </div>
         <div class="room-info">
             <h2>Phòng <?php echo $room['so_phong']; ?></h2>

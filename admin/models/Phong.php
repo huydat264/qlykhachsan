@@ -9,7 +9,6 @@ class Phong {
         $this->conn = Database::getConnection(); // PDO
     }
 
-    // Lấy danh sách phòng + khách hàng
     public function getAll($search = '') {
         $where = '';
         $params = [];
@@ -21,68 +20,105 @@ class Phong {
             $params[':search'] = "%$search%";
         }
 
+        // Lấy bản ghi đặt phòng mới nhất (chưa hủy, chưa hoàn thành) cho mỗi phòng
         $sql = "SELECT 
-                    Phong.*, 
-                    KhachHang.ho_ten AS ten_khach_hang,
-                    KhachHang.cccd AS cccd_khach_hang,
-                    KhachHang.so_dien_thoai AS sdt_khach_hang
-                FROM Phong 
-                LEFT JOIN DatPhong ON Phong.id_phong = DatPhong.id_phong
-                LEFT JOIN KhachHang ON DatPhong.id_khachhang = KhachHang.id_khachhang
+                    p.*, 
+                    CASE WHEN p.trang_thai = 'Trống' THEN NULL ELSE kh.ho_ten END AS ten_khach_hang,
+                    CASE WHEN p.trang_thai = 'Trống' THEN NULL ELSE kh.cccd END AS cccd_khach_hang,
+                    CASE WHEN p.trang_thai = 'Trống' THEN NULL ELSE kh.so_dien_thoai END AS sdt_khach_hang
+                FROM Phong p
+                LEFT JOIN (
+                    SELECT d1.* FROM DatPhong d1
+                    INNER JOIN (
+                        SELECT id_phong, MAX(id_datphong) AS max_id
+                        FROM DatPhong
+                        WHERE trang_thai NOT IN ('Đã hủy', 'Hoàn thành')
+                        GROUP BY id_phong
+                    ) d2 ON d1.id_phong = d2.id_phong AND d1.id_datphong = d2.max_id
+                ) dp ON p.id_phong = dp.id_phong
+                LEFT JOIN KhachHang kh ON dp.id_khachhang = kh.id_khachhang
                 $where
-                ORDER BY Phong.so_phong";
+                ORDER BY p.so_phong";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC); // Trả về mảng
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Lấy phòng theo ID
     public function getById($id) {
         $sql = "SELECT * FROM Phong WHERE id_phong = :id";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC); // Trả về 1 phòng
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Cập nhật thông tin phòng
     public function update($data) {
-        $sql = "UPDATE Phong 
-                SET so_phong = :so_phong, 
-                    loai_phong = :loai_phong, 
-                    gia_phong = :gia_phong, 
-                    so_luong_nguoi = :so_luong_nguoi, 
-                    mo_ta = :mo_ta, 
-                    anh = :anh, 
-                    trang_thai = :trang_thai
-                WHERE id_phong = :id_phong";
+    $so_phong = trim($data['so_phong']);
+    $so_luong_nguoi = trim($data['so_luong_nguoi']);
+    $gia_phong = trim($data['gia_phong']);
 
-        $stmt = $this->conn->prepare($sql);
-
-        return $stmt->execute([
-            ':so_phong'        => $data['so_phong'],
-            ':loai_phong'      => $data['loai_phong'],
-            ':gia_phong'       => $data['gia_phong'],
-            ':so_luong_nguoi'  => $data['so_luong_nguoi'],
-            ':mo_ta'           => $data['mo_ta'],
-            ':anh'             => $data['anh'],
-            ':trang_thai'      => $data['trang_thai'],
-            ':id_phong'        => $data['id_phong']
-        ]);
+    // Kiểm tra số phòng
+    if (!preg_match('/^[1-9][0-9]*$/', $so_phong)) {
+        throw new Exception("Số phòng phải là số nguyên dương, không chứa ký tự đặc biệt.");
     }
 
-    // Trả phòng (xóa khách khỏi DatPhong và set trạng thái về Trống)
+    // Kiểm tra số lượng người
+    if (!preg_match('/^[1-9][0-9]*$/', $so_luong_nguoi)) {
+        throw new Exception("Số người phải là số nguyên dương, không chứa ký tự đặc biệt.");
+    }
+
+    // Kiểm tra giá phòng
+    if (!preg_match('/^[1-9][0-9]*$/', $gia_phong)) {
+        throw new Exception("Giá phòng chỉ được nhập số, không âm, không ký tự đặc biệt.");
+    }
+
+    $sql = "UPDATE Phong 
+            SET so_phong = :so_phong, 
+                loai_phong = :loai_phong, 
+                gia_phong = :gia_phong, 
+                so_luong_nguoi = :so_luong_nguoi, 
+                mo_ta = :mo_ta, 
+                anh = :anh, 
+                trang_thai = :trang_thai
+            WHERE id_phong = :id_phong";
+
+    $stmt = $this->conn->prepare($sql);
+
+    return $stmt->execute([
+        ':so_phong'        => $so_phong,
+        ':loai_phong'      => $data['loai_phong'],
+        ':gia_phong'       => $gia_phong,
+        ':so_luong_nguoi'  => $so_luong_nguoi,
+        ':mo_ta'           => $data['mo_ta'],
+        ':anh'             => $this->xuLyAnh($data['anh']),
+        ':trang_thai'      => $data['trang_thai'],
+        ':id_phong'        => $data['id_phong']
+    ]);
+}
+
+
+    private function xuLyAnh($link) {
+        $link = trim($link);
+
+        // Nếu là link trực tiếp (bắt đầu bằng http)
+        if (preg_match('/^https?:\/\//', $link)) {
+            return $link;
+        }
+
+        // Nếu chỉ là tên file thì lưu tên file (ví dụ: phong1.jpg)
+        // Không thêm ../../ ở đây, vì phần user đã tự nối
+        return basename($link);
+    }
+
     public function deleteKhach($id) {
         try {
             $this->conn->beginTransaction();
 
-            // Xóa trong bảng đặt phòng
             $sql1 = "DELETE FROM DatPhong WHERE id_phong = :id";
             $stmt1 = $this->conn->prepare($sql1);
             $stmt1->execute([':id' => $id]);
 
-            // Cập nhật trạng thái phòng
             $sql2 = "UPDATE Phong SET trang_thai = 'Trống' WHERE id_phong = :id";
             $stmt2 = $this->conn->prepare($sql2);
             $stmt2->execute([':id' => $id]);

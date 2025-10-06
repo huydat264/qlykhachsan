@@ -61,7 +61,8 @@ $nhanVienCounts   = array_column($nhanVienByRole ?? [], 'total');
     </div>
 
     <!-- Các thẻ thống kê -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+
         <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
             <div class="bg-blue-100 text-blue-500 rounded-full p-3 mb-2"><i class="ri-door-line text-2xl"></i></div>
             <h3 class="text-lg font-semibold text-gray-600">Tổng số phòng</h3>
@@ -87,6 +88,16 @@ $nhanVienCounts   = array_column($nhanVienByRole ?? [], 'total');
             <h3 class="text-lg font-semibold">Tổng doanh thu thực tế</h3>
             <p class="text-3xl lg:text-4xl font-bold mt-1"><?= number_format($doanhThuThucTe,0,",",".") ?> VND</p>
         </div>
+        <div class="bg-red-700 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
+    <div class="bg-white bg-opacity-20 rounded-full p-3 mb-2">
+        <i class="ri-money-dollar-circle-line text-2xl"></i>
+    </div>
+    <h3 class="text-lg font-semibold">Tổng chi tiêu</h3>
+    <p class="text-3xl lg:text-4xl font-bold mt-1">
+        <?= number_format($tongChiTieu, 0, ',', '.') ?> VND
+    </p>
+</div>
+
     </div>
 
     <!-- Biểu đồ -->

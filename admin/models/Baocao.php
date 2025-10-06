@@ -73,34 +73,80 @@ class Baocao
 
 
 
-    public function getVipKhachHang()
-    {
-        $sql = "SELECT kh.ho_ten, SUM(hd.tong_tien) AS total_spent
-                FROM hoadon hd
-                JOIN datphong dp ON hd.id_datphong = dp.id_datphong
-                JOIN khachhang kh ON dp.id_khachhang = kh.id_khachhang
-                GROUP BY kh.id_khachhang, kh.ho_ten
-                ORDER BY total_spent DESC
-                LIMIT 3";
-        $stmt = $this->db->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+   public function getVipKhachHang()
+{
+    $sql = "
+        SELECT 
+            kh.ho_ten,
+            SUM(
+                (p.gia_phong * 
+                    GREATEST(
+                        DATEDIFF(dp.ngay_tra, dp.ngay_nhan),
+                        1
+                    )
+                ) 
+                + COALESCE(SUM_DV.total_dv, 0)
+            ) AS total_spent
+        FROM datphong dp
+        JOIN phong p ON dp.id_phong = p.id_phong
+        JOIN khachhang kh ON dp.id_khachhang = kh.id_khachhang
+        LEFT JOIN (
+            SELECT id_datphong, SUM(thanh_tien) AS total_dv
+            FROM sudungdichvu
+            GROUP BY id_datphong
+        ) AS SUM_DV ON SUM_DV.id_datphong = dp.id_datphong
+        GROUP BY kh.id_khachhang, kh.ho_ten
+        ORDER BY total_spent DESC
+        LIMIT 3
+    ";
 
-    public function getTotalKhachHang()
-    {
-        $stmt = $this->db->query("SELECT COUNT(*) AS total FROM khachhang");
-        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-    }
+    $stmt = $this->db->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+public function getTongChiTieu()
+{
+    $sql = "
+        SELECT 
+            SUM(
+                (p.gia_phong * GREATEST(DATEDIFF(dp.ngay_tra, dp.ngay_nhan), 1))
+                + COALESCE(SUM_DV.total_dv, 0)
+            ) AS total
+        FROM datphong dp
+        JOIN phong p ON dp.id_phong = p.id_phong
+        LEFT JOIN (
+            SELECT id_datphong, SUM(thanh_tien) AS total_dv
+            FROM sudungdichvu
+            GROUP BY id_datphong
+        ) AS SUM_DV ON dp.id_datphong = SUM_DV.id_datphong
+    ";
+    $stmt = $this->db->query($sql);
+    return (float) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+}
+// Đếm tổng số khách hàng
+public function getTotalKhachHang()
+{
+    $sql = "SELECT COUNT(*) AS total FROM khachhang";
+    $stmt = $this->db->query($sql);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return (int)($result['total'] ?? 0);
+}
+// Đếm tổng số dịch vụ
+public function getTotalDichVu()
+{
+    $sql = "SELECT COUNT(*) AS total FROM dichvu";
+    $stmt = $this->db->query($sql);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return (int)($result['total'] ?? 0);
+}
 
-    public function getTotalDichVu()
-    {
-        $stmt = $this->db->query("SELECT COUNT(*) AS total FROM dichvu");
-        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-    }
+// Đếm tổng số nhân viên
+public function getTotalNhanVien()
+{
+    $sql = "SELECT COUNT(*) AS total FROM nhanvien";
+    $stmt = $this->db->query($sql);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return (int)($result['total'] ?? 0);
+}
 
-    public function getTotalNhanVien()
-    {
-        $stmt = $this->db->query("SELECT COUNT(*) AS total FROM nhanvien");
-        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-    }
+
 }
