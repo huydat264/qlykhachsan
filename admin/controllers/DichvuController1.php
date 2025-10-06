@@ -39,38 +39,62 @@ class DichvuController1 {
     }
 
     // Thêm dịch vụ
-    private function add($data) {
-        try {
-            if (!isset($data['gia']) || $data['gia'] < 0) {
-                throw new Exception("❌ Giá dịch vụ không được âm!");
-            }
-
-            $this->dichvuModel->add($data);
-
-            echo "<script>alert('✅ Thêm dịch vụ thành công!');window.location='index.php?controller=dichvu';</script>";
-            exit;
-        } catch (Exception $e) {
-            // Hiển thị lỗi từ model (vd: tên dịch vụ sai định dạng)
-            echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
+private function add($data) {
+    try {
+        if (!isset($data['gia']) || $data['gia'] < 0) {
+            throw new Exception("❌ Giá dịch vụ không được âm!");
         }
-    }
 
-    // Cập nhật dịch vụ
-    private function update($id, $data) {
-        try {
-            if (!isset($data['gia']) || $data['gia'] < 0) {
-                throw new Exception("❌ Giá dịch vụ không được âm!");
-            }
+        // ✅ Xử lý upload ảnh
+        $imageName = null;
+        if (!empty($_FILES['hinh_anh']['name'])) {
+            $targetDir = __DIR__ . "/../uploads/dichvu/";
+            if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
-            $this->dichvuModel->update($id, $data);
-
-            echo "<script>alert('✅ Cập nhật dịch vụ thành công!');window.location='index.php?controller=dichvu';</script>";
-            exit;
-        } catch (Exception $e) {
-            // Hiển thị lỗi từ model
-            echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
+            $imageName = time() . "_" . basename($_FILES['hinh_anh']['name']);
+            $targetFile = $targetDir . $imageName;
+            move_uploaded_file($_FILES['hinh_anh']['tmp_name'], $targetFile);
         }
+        $data['hinh_anh'] = $imageName;
+
+        $this->dichvuModel->add($data);
+
+        echo "<script>alert('✅ Thêm dịch vụ thành công!');window.location='index.php?controller=dichvu';</script>";
+        exit;
+    } catch (Exception $e) {
+        echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
     }
+}
+
+private function update($id, $data) {
+    try {
+        if (!isset($data['gia']) || $data['gia'] < 0) {
+            throw new Exception("❌ Giá dịch vụ không được âm!");
+        }
+
+        // ✅ Xử lý cập nhật ảnh
+        $oldData = $this->dichvuModel->getById($id);
+        $imageName = $oldData['hinh_anh'] ?? null;
+
+        if (!empty($_FILES['hinh_anh']['name'])) {
+            $targetDir = __DIR__ . "/../uploads/dichvu/";
+            if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+
+            $imageName = time() . "_" . basename($_FILES['hinh_anh']['name']);
+            $targetFile = $targetDir . $imageName;
+            move_uploaded_file($_FILES['hinh_anh']['tmp_name'], $targetFile);
+        }
+        $data['hinh_anh'] = $imageName;
+
+        $this->dichvuModel->update($id, $data);
+
+        echo "<script>alert('✅ Cập nhật dịch vụ thành công!');window.location='index.php?controller=dichvu';</script>";
+        exit;
+    } catch (Exception $e) {
+        echo "<script>alert('Lỗi: " . $e->getMessage() . "');</script>";
+    }
+}
+
 
     // Xóa dịch vụ
     public function delete($id) {

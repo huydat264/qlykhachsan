@@ -217,7 +217,8 @@
             <i class="fas fa-tools"></i>
             <?= $edit_data ? 'Chỉnh sửa dịch vụ #' . htmlspecialchars($edit_data['id_dichvu']) : 'Thêm Dịch vụ Mới' ?>
         </h3>
-        <form method="post">
+        <!-- ✅ Thêm enctype để upload ảnh -->
+        <form method="post" enctype="multipart/form-data">
             <?php if ($edit_data): ?>
                 <input type="hidden" name="id_dichvu" value="<?= htmlspecialchars($edit_data['id_dichvu']) ?>">
             <?php endif; ?>
@@ -227,6 +228,13 @@
             </div>
             <div class="form-row">
                 <textarea name="mo_ta" placeholder="Mô tả"><?= $edit_data ? htmlspecialchars($edit_data['mo_ta']) : '' ?></textarea>
+            </div>
+            <!-- ✅ Thêm phần upload ảnh -->
+            <div class="form-row">
+                <input type="file" name="hinh_anh" accept="image/*">
+                <?php if (!empty($edit_data['hinh_anh'])): ?>
+                    <img src="../uploads/dichvu/<?= htmlspecialchars($edit_data['hinh_anh']) ?>" alt="Ảnh dịch vụ" style="max-width:100px; border-radius:8px;">
+                <?php endif; ?>
             </div>
             <div class="form-actions">
                 <button type="submit" name="<?= $edit_data ? 'luu' : 'them' ?>">
@@ -244,6 +252,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Ảnh</th> <!-- ✅ Cột ảnh -->
                 <th>Tên dịch vụ</th>
                 <th>Giá</th>
                 <th>Mô tả</th>
@@ -255,6 +264,13 @@
                 <?php foreach ($dichvuList as $row): ?>
                 <tr>
                     <td><?= htmlspecialchars($row['id_dichvu']) ?></td>
+                    <td>
+                        <?php if (!empty($row['hinh_anh'])): ?>
+                            <img src="../uploads/dichvu/<?= htmlspecialchars($row['hinh_anh']) ?>" style="width:60px; height:60px; object-fit:cover; border-radius:8px;">
+                        <?php else: ?>
+                            <span style="color:#aaa;">(Không có ảnh)</span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= htmlspecialchars($row['ten_dich_vu']) ?></td>
                     <td><?= number_format($row['gia'], 0, ",", ".") ?> VNĐ</td>
                     <td><?= htmlspecialchars($row['mo_ta']) ?></td>
@@ -266,7 +282,7 @@
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="5" style="text-align: center;">Không tìm thấy dịch vụ nào.</td>
+                    <td colspan="6" style="text-align: center;">Không tìm thấy dịch vụ nào.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
@@ -278,7 +294,6 @@
         <h4><i class="fas fa-exclamation-triangle"></i> Xác nhận xóa</h4>
         <p>Bạn có chắc chắn muốn xóa dịch vụ này? Hành động này không thể hoàn tác.</p>
         <div class="modal-buttons">
-            <!-- Nút xác nhận xóa -->
             <button id="confirm-delete"><i class="fas fa-trash-alt"></i> Xóa</button>
             <button id="cancel-delete"><i class="fas fa-times"></i> Hủy</button>
         </div>
@@ -304,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     confirmBtn.addEventListener('click', function() {
         if (currentId) {
-            // Redirect đúng tới controller + action xóa
             window.location.href = `index.php?controller=dichvu&xoa=${currentId}`;
         }
     });

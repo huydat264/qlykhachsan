@@ -23,7 +23,8 @@ class DichVuDAO {
                 $row['id_dichvu'],
                 $row['ten_dich_vu'],
                 $row['mo_ta'],
-                $row['gia']
+                $row['gia'],
+                $row['hinh_anh'] ?? null
             );
         }
         return $list;
@@ -42,9 +43,11 @@ class DichVuDAO {
                 $row['id_dichvu'],
                 $row['ten_dich_vu'],
                 $row['mo_ta'],
-                $row['gia']
+                $row['gia'],
+                $row['hinh_anh'] ?? null
             );
         }
         return null;
     }
 }
+?>
