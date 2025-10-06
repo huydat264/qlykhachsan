@@ -3,10 +3,17 @@ class Datphong {
     private $conn;
 
     public function __construct($db) {
-        $this->conn = $db; // PDO
+        $this->conn = $db;
     }
 
-    // Lấy tất cả đặt phòng
+    public function getAllKhachHang() {
+        $sql = "SELECT id_khachhang, ho_ten, gioi_tinh, cccd, so_dien_thoai, email, dia_chi, ngay_sinh
+                FROM KhachHang
+                ORDER BY ho_ten ASC";
+        $stmt = $this->conn->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getAll() {
         $sql = "SELECT dp.*, p.so_phong, kh.ho_ten, kh.cccd, kh.so_dien_thoai
                 FROM DatPhong dp
@@ -17,7 +24,6 @@ class Datphong {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Lấy dữ liệu để sửa
     public function getById($id) {
         $sql = "SELECT dp.*, p.so_phong, kh.ho_ten
                 FROM DatPhong dp
@@ -29,48 +35,37 @@ class Datphong {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Thêm đặt phòng mới
+    // ✅ Chỉ đặt phòng, không kiểm tra trùng khách hàng
     public function add($data) {
         try {
             $this->conn->beginTransaction();
 
-            // Kiểm tra khách hàng
-            $stmt_kh = $this->conn->prepare("SELECT id_khachhang FROM KhachHang WHERE cccd = :cccd");
-            $stmt_kh->execute(['cccd' => $data['cccd']]);
-            $kh = $stmt_kh->fetch(PDO::FETCH_ASSOC);
-
-            if ($kh) {
-                $id_kh = $kh['id_khachhang'];
+            // Nếu đã có khách hàng
+            if (!empty($data['id_khachhang'])) {
+                $id_kh = $data['id_khachhang'];
             } else {
-                // Tạo tài khoản và khách hàng mới
-                $username = 'kh'.rand(10000,99999);
-                $password = password_hash('123456', PASSWORD_DEFAULT);
-                $stmt_acc = $this->conn->prepare("INSERT INTO TaiKhoan (username,password,role) VALUES (:username, :password, 'USER')");
-                $stmt_acc->execute(['username'=>$username,'password'=>$password]);
-                $id_acc = $this->conn->lastInsertId();
-
-                $stmt_kh_insert = $this->conn->prepare(
-                    "INSERT INTO KhachHang (tai_khoan_khachhang_id, ho_ten, ngay_sinh, gioi_tinh, so_dien_thoai, email, cccd, dia_chi)
-                     VALUES (:id_acc, :ho_ten, :ngay_sinh, :gioi_tinh, :so_dien_thoai, :email, :cccd, :dia_chi)"
-                );
-                $stmt_kh_insert->execute([
-                    'id_acc' => $id_acc,
+                // Nếu là khách hàng mới → thêm mới
+                $stmt_kh = $this->conn->prepare("
+                    INSERT INTO KhachHang (ho_ten, ngay_sinh, gioi_tinh, so_dien_thoai, email, cccd, dia_chi)
+                    VALUES (:ho_ten, :ngay_sinh, :gioi_tinh, :so_dien_thoai, :email, :cccd, :dia_chi)
+                ");
+                $stmt_kh->execute([
                     'ho_ten' => $data['ho_ten'],
-                    'ngay_sinh' => $data['ngay_sinh'],
-                    'gioi_tinh' => $data['gioi_tinh'],
+                    'ngay_sinh' => $data['ngay_sinh'] ?? null,
+                    'gioi_tinh' => $data['gioi_tinh'] ?? '',
                     'so_dien_thoai' => $data['so_dien_thoai'],
                     'email' => $data['email'],
                     'cccd' => $data['cccd'],
-                    'dia_chi' => $data['dia_chi']
+                    'dia_chi' => $data['dia_chi'] ?? ''
                 ]);
                 $id_kh = $this->conn->lastInsertId();
             }
 
-            // Thêm DatPhong
-            $stmt_dp = $this->conn->prepare(
-                "INSERT INTO DatPhong (id_khachhang, id_phong, ngay_dat, ngay_nhan, ngay_tra, trang_thai)
-                 VALUES (:id_kh, :id_phong, CURDATE(), :ngay_nhan, :ngay_tra, 'Đã xác nhận')"
-            );
+            // ✅ Thêm thông tin đặt phòng
+            $stmt_dp = $this->conn->prepare("
+                INSERT INTO DatPhong (id_khachhang, id_phong, ngay_dat, ngay_nhan, ngay_tra, trang_thai)
+                VALUES (:id_kh, :id_phong, CURDATE(), :ngay_nhan, :ngay_tra, 'Đã xác nhận')
+            ");
             $stmt_dp->execute([
                 'id_kh' => $id_kh,
                 'id_phong' => $data['id_phong'],
@@ -78,29 +73,56 @@ class Datphong {
                 'ngay_tra' => $data['ngay_tra']
             ]);
 
-            // Cập nhật trạng thái phòng
+            // ✅ Cập nhật trạng thái phòng
             $stmt_p = $this->conn->prepare("UPDATE Phong SET trang_thai='Đã đặt' WHERE id_phong=:id_phong");
             $stmt_p->execute(['id_phong' => $data['id_phong']]);
 
             $this->conn->commit();
             return true;
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $this->conn->rollBack();
             throw $e;
         }
     }
 
-    // Cập nhật đặt phòng
-    public function update($id, $data) {
+    // ✅ Dành riêng cho khách hàng đã có
+    public function addForExistingCustomer($data) {
         try {
             $this->conn->beginTransaction();
 
+            $stmt_dp = $this->conn->prepare("
+                INSERT INTO DatPhong (id_khachhang, id_phong, ngay_dat, ngay_nhan, ngay_tra, trang_thai)
+                VALUES (:id_khachhang, :id_phong, CURDATE(), :ngay_nhan, :ngay_tra, 'Đã xác nhận')
+            ");
+            $stmt_dp->execute([
+                'id_khachhang' => $data['id_khachhang'],
+                'id_phong' => $data['id_phong'],
+                'ngay_nhan' => $data['ngay_nhan'],
+                'ngay_tra' => $data['ngay_tra']
+            ]);
+
+            $stmt_p = $this->conn->prepare("UPDATE Phong SET trang_thai='Đã đặt' WHERE id_phong=:id_phong");
+            $stmt_p->execute(['id_phong' => $data['id_phong']]);
+
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            throw $e;
+        }
+    }
+
+    public function update($id, $data) {
+        try {
+            $this->conn->beginTransaction();
             $stmt_old = $this->conn->prepare("SELECT id_phong FROM DatPhong WHERE id_datphong=:id");
             $stmt_old->execute(['id'=>$id]);
             $old = $stmt_old->fetch(PDO::FETCH_ASSOC);
             $id_phong = $old['id_phong'];
 
-            $stmt_up = $this->conn->prepare("UPDATE DatPhong SET ngay_nhan=:ngay_nhan, ngay_tra=:ngay_tra, trang_thai=:trang_thai WHERE id_datphong=:id");
+            $stmt_up = $this->conn->prepare("UPDATE DatPhong 
+                                             SET ngay_nhan=:ngay_nhan, ngay_tra=:ngay_tra, trang_thai=:trang_thai 
+                                             WHERE id_datphong=:id");
             $stmt_up->execute([
                 'ngay_nhan'=>$data['ngay_nhan'],
                 'ngay_tra'=>$data['ngay_tra'],
@@ -125,11 +147,9 @@ class Datphong {
         }
     }
 
-    // Xóa đặt phòng
     public function delete($id) {
         try {
             $this->conn->beginTransaction();
-
             $stmt_old = $this->conn->prepare("SELECT id_phong FROM DatPhong WHERE id_datphong=:id");
             $stmt_old->execute(['id'=>$id]);
             $phong = $stmt_old->fetch(PDO::FETCH_ASSOC);
@@ -149,7 +169,6 @@ class Datphong {
         }
     }
 
-    // Lấy phòng trống
     public function getPhongTrong() {
         $stmt = $this->conn->query("SELECT id_phong, so_phong, loai_phong FROM Phong WHERE trang_thai='Trống'");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

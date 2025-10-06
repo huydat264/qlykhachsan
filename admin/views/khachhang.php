@@ -27,6 +27,20 @@ include __DIR__ . '/layouts/header.php';
 </style>
 
 <main class="container">
+     <!-- Thông báo lỗi / thành công -->
+    <?php if (isset($_SESSION['error'])): ?>
+        <div style="padding: 12px; margin-bottom: 15px; border-radius: 8px; background-color: #f8d7da; color: #721c24; font-weight: 600;">
+            <?= $_SESSION['error']; ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['success'])): ?>
+        <div style="padding: 12px; margin-bottom: 15px; border-radius: 8px; background-color: #d4edda; color: #155724; font-weight: 600;">
+            <?= $_SESSION['success']; ?>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
     <div class="header-container">
         <h2 class="main-title">Quản lý Khách hàng</h2>
         <form method="post" class="search-form">
@@ -36,9 +50,9 @@ include __DIR__ . '/layouts/header.php';
     </div>
 
     <div class="form-box">
-        <h3><i class="fas fa-user-plus"></i> <?= $edit_data ? "Sửa Khách hàng" : "Thêm Khách hàng Mới" ?></h3>
+        <h3><i class="fas fa-user-plus"></i> <?= (isset($edit_data['id_khachhang']) && $edit_data['id_khachhang']) ? "Sửa Khách hàng" : "Thêm Khách hàng Mới" ?></h3>
         <form method="post" action="index.php?controller=khachhang&action=createOrUpdate">
-    <?php if ($edit_data): ?>
+    <?php if (isset($edit_data['id_khachhang']) && $edit_data['id_khachhang']): ?>
         <input type="hidden" name="id_khachhang" value="<?= $edit_data['id_khachhang'] ?>">
     <?php endif; ?>
 
@@ -53,10 +67,10 @@ include __DIR__ . '/layouts/header.php';
             <option value="Khác" <?= ($edit_data && $edit_data['gioi_tinh']=='Khác')?'selected':'' ?>>Khác</option>
         </select>
         <input type="tel" name="so_dien_thoai" placeholder="Số điện thoại" 
-       value="<?= $edit_data['so_dien_thoai'] ?? '' ?>" 
-       pattern="[0-9]{10,11}" 
-       oninput="this.value=this.value.replace(/[^0-9]/g,'');" 
-       required>
+   value="<?= $edit_data['so_dien_thoai'] ?? '' ?>" 
+   oninput="this.value=this.value.replace(/[^0-9]/g,'');" 
+   required>
+
 
         <input type="email" name="email" placeholder="Email" value="<?= $edit_data['email'] ?? '' ?>">
         <input type="text" name="cccd" placeholder="CCCD" value="<?= $edit_data['cccd'] ?? '' ?>">
@@ -69,7 +83,7 @@ include __DIR__ . '/layouts/header.php';
     </div>
 
     <div class="form-actions">
-        <?php if ($edit_data): ?>
+        <?php if (isset($edit_data['id_khachhang']) && $edit_data['id_khachhang']): ?>
             <button type="submit" name="capnhat" class="btn-capnhat">
                 <i class="fas fa-edit"></i> Cập nhật
             </button>

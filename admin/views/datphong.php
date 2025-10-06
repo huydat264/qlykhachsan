@@ -260,71 +260,65 @@
         </form>
     </div>
     <?php else: ?>
-    <div class="form-box">
+<div class="form-box">
     <h3><i class="fas fa-plus-circle"></i> Thông tin đặt phòng mới</h3>
-    <form method="post">
+    <form method="post" id="datphong-form">
         <div class="form-row">
-            <select name="id_phong" required>
-                <option value="">Chọn phòng trống...</option>
-                <?php foreach ($phongTrong as $phong): ?>
-                    <option value="<?= $phong['id_phong'] ?>">Phòng <?= $phong['so_phong'] ?> - <?= $phong['loai_phong'] ?></option>
-                <?php endforeach; ?>
-            </select>
-
-            <!-- Dropdown chọn khách hàng -->
-            <select id="chon_khachhang" name="id_khachhang">
-    <option value="">-- Chọn khách hàng --</option>
-    <?php foreach ($khachhangList as $kh): ?>
-        <option value="<?= $kh['id_khachhang'] ?>"
-            data-hoten="<?= htmlspecialchars($kh['ho_ten']) ?>"
-            data-cccd="<?= htmlspecialchars($kh['cccd']) ?>"
-            data-sdt="<?= htmlspecialchars($kh['so_dien_thoai']) ?>"
-            data-email="<?= htmlspecialchars($kh['email']) ?>"
-            data-diachi="<?= htmlspecialchars($kh['dia_chi']) ?>"
-            data-ngaysinh="<?= htmlspecialchars($kh['ngay_sinh']) ?>"
-            data-gioitinh="<?= htmlspecialchars($kh['gioi_tinh']) ?>">
-            <?= htmlspecialchars($kh['ho_ten']) ?> (<?= $kh['so_dien_thoai'] ?>)
+            <div>
+                <label>Chọn phòng:</label>
+                <select name="id_phong" required>
+                    <option value="">Chọn phòng trống...</option>
+                    <?php foreach ($phongTrong as $phong): ?>
+                        <option value="<?= $phong['id_phong'] ?>">Phòng <?= $phong['so_phong'] ?> - <?= $phong['loai_phong'] ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label>Chọn khách hàng:</label>
+                <select id="chon_khachhang" name="id_khachhang">
+    <option value="">-- Khách hàng mới --</option>
+    <?php foreach ($khachHangList as $kh): ?>
+        <option value="<?= $kh['id_khachhang'] ?>" 
+            data-info='<?= json_encode($kh) ?>'>
+            <?= $kh['ho_ten'] ?> - <?= $kh['cccd'] ?>
         </option>
     <?php endforeach; ?>
 </select>
 
+            </div>
         </div>
 
-        <!-- Thông tin khách hàng -->
         <div class="form-row">
-            <input type="text" id="ho_ten" name="ho_ten" placeholder="Họ và tên khách hàng" required>
-            <input type="text" id="cccd" name="cccd" placeholder="CCCD" required>
+            <input type="text" name="ho_ten" id="ho_ten" placeholder="Họ và tên khách hàng" required>
+            <input type="text" name="cccd" id="cccd" placeholder="CCCD" required>
+            <input type="date" name="ngay_sinh" id="ngay_sinh" required>
         </div>
         <div class="form-row">
-            <input type="date" name="ngay_sinh">
-            <select name="gioi_tinh">
+            <select name="gioi_tinh" id="gioi_tinh" required>
                 <option value="">Giới tính...</option>
                 <option value="Nam">Nam</option>
                 <option value="Nữ">Nữ</option>
                 <option value="Khác">Khác</option>
             </select>
-            <input type="text" id="so_dien_thoai" name="so_dien_thoai" placeholder="Số điện thoại" required>
+            <input type="text" name="so_dien_thoai" id="so_dien_thoai" placeholder="Số điện thoại" required>
+            <input type="email" name="email" id="email" placeholder="Email" required>
         </div>
         <div class="form-row">
-            <input type="email" id="email" name="email" placeholder="Email">
-            <input type="text" id="dia_chi" name="dia_chi" placeholder="Địa chỉ">
+            <input type="text" name="dia_chi" id="dia_chi" placeholder="Địa chỉ">
         </div>
-
-        <!-- Ngày nhận - trả -->
         <div class="form-row">
             <label for="ngay_nhan">Ngày nhận phòng:</label>
             <input type="date" id="ngay_nhan" name="ngay_nhan" required>
             <label for="ngay_tra">Ngày trả phòng:</label>
             <input type="date" id="ngay_tra" name="ngay_tra" required>
         </div>
-
         <div class="form-actions">
             <button type="submit" name="dat_phong"><i class="fas fa-calendar-check"></i> Đặt phòng</button>
         </div>
     </form>
 </div>
+<?php endif; ?>
 
-    <?php endif; ?>
 
     <table>
         <thead>
@@ -353,7 +347,10 @@
                 <td><?= $row['trang_thai'] ?></td>
                 <td class="action-links">
                     <a href="index.php?controller=datphong&sua=<?= $row['id_datphong'] ?>" class="edit-link"><i class="fas fa-edit"></i> Sửa</a>
-                    <a href="#" class="delete-link" data-id="<?= $row['id_datphong'] ?>"><i class="fas fa-trash-alt"></i> Hủy</a>
+                   <a href="#" class="delete-link" onclick="huyDatPhong(<?= $row['id_datphong'] ?>)">
+    <i class="fas fa-trash-alt"></i> Hủy
+</a>
+
                 </td>
             </tr>
             <?php endforeach; ?>
@@ -373,58 +370,57 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // --- Xử lý xóa đặt phòng ---
-    const deleteLinks = document.querySelectorAll('.delete-link');
-    const modal = document.getElementById('delete-modal');
-    const confirmBtn = document.getElementById('confirm-delete');
-    const cancelBtn = document.getElementById('cancel-delete');
-    let currentId = null;
-
-    deleteLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            currentId = this.getAttribute('data-id');
-            modal.style.display = 'flex';
-        });
-    });
-
-    confirmBtn.addEventListener('click', function() {
-        if (currentId) {
-            window.location.href = `index.php?controller=datphong&xoa=${currentId}`;
-        }
-    });
-
-    cancelBtn.addEventListener('click', function() {
-        modal.style.display = 'none';
-    });
-
-    window.addEventListener('click', function(e) {
-        if (e.target === modal) modal.style.display = 'none';
-    });
-
-    // --- Xử lý auto-fill khách hàng ---
-    const chonKH = document.getElementById('chon_khachhang');
-    if (chonKH) {
-        chonKH.addEventListener('change', function() {
-            let opt = this.options[this.selectedIndex];
-            if (opt.value !== "") {
-                document.getElementById('ho_ten').value = opt.getAttribute('data-hoten') || '';
-                document.getElementById('cccd').value = opt.getAttribute('data-cccd') || '';
-                document.getElementById('so_dien_thoai').value = opt.getAttribute('data-sdt') || '';
-                document.getElementById('email').value = opt.getAttribute('data-email') || '';
-                document.getElementById('dia_chi').value = opt.getAttribute('data-diachi') || '';
-                
-                // ✅ Thêm ngày sinh + giới tính
-                const ngaySinhInput = document.querySelector('input[name="ngay_sinh"]');
-                const gioiTinhSelect = document.querySelector('select[name="gioi_tinh"]');
-                if (ngaySinhInput) ngaySinhInput.value = opt.getAttribute('data-ngaysinh') || '';
-                if (gioiTinhSelect) gioiTinhSelect.value = opt.getAttribute('data-gioitinh') || '';
-            }
-        });
+document.getElementById('chon_khachhang').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const info = selected.getAttribute('data-info');
+    
+    if (info) {
+        const kh = JSON.parse(info);
+        document.getElementById('ho_ten').value = kh.ho_ten;
+        document.getElementById('cccd').value = kh.cccd;
+        document.getElementById('ngay_sinh').value = kh.ngay_sinh;
+        document.getElementById('gioi_tinh').value = kh.gioi_tinh;
+        document.getElementById('so_dien_thoai').value = kh.so_dien_thoai;
+        document.getElementById('email').value = kh.email;
+        document.getElementById('dia_chi').value = kh.dia_chi;
+    } else {
+        // Clear nếu chọn "Khách hàng mới"
+        document.querySelectorAll('#ho_ten,#cccd,#ngay_sinh,#gioi_tinh,#so_dien_thoai,#email,#dia_chi')
+            .forEach(el => el.value = '');
     }
 });
-</script>
 
+
+</script>
+<!-- Thư viện SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function huyDatPhong(id) {
+    Swal.fire({
+        title: 'Xác nhận hủy đặt phòng?',
+        text: "Hành động này sẽ xóa đặt phòng khỏi hệ thống!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Hủy đặt phòng',
+        cancelButtonText: 'Quay lại'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Đã hủy!',
+                text: 'Đặt phòng đã được hủy thành công.',
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 1200
+            });
+            setTimeout(() => {
+                window.location.href = 'index.php?controller=datphong&xoa=' + id;
+            }, 1300);
+        }
+    });
+}
+</script>
 
 <?php include __DIR__ . '/layouts/footer.php'; ?>

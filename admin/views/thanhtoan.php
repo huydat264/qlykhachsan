@@ -123,9 +123,11 @@
                     <option value="<?= htmlspecialchars($phong['id_phong']) ?>"
                             data-total-price="<?= htmlspecialchars($phong['tong_tien_phai_tra']) ?>"
                             data-so-phong="<?= htmlspecialchars($phong['so_phong']) ?>"
-                            data-gia-phong="<?= htmlspecialchars($phong['gia_phong']) ?>"
+                            data-gia-phong="<?= htmlspecialchars($phong['gia_phong_theo_ngay']) ?>"
                             data-tien-dv="<?= htmlspecialchars($phong['tong_tien_dichvu']) ?>"
-                            data-id-datphong="<?= htmlspecialchars($phong['id_datphong']) ?>">
+                            data-id-datphong="<?= htmlspecialchars($phong['id_datphong']) ?>"
+                            data-so-ngay="<?= htmlspecialchars($phong['so_ngay_o']) ?>"
+                            >
                         Phòng <?= htmlspecialchars($phong['so_phong']) ?>
                     </option>
                 <?php } ?>
@@ -135,14 +137,14 @@
         <input type="hidden" id="id_datphong" name="id_datphong" value="">
 
         <div class="form-group">
-            <label for="so_tien">Số tiền phải trả (VND):</label>
+            <label for="so_tien">Số tiền còn phải thanh toán (VND):</label>
             <input type="text" id="so_tien" name="so_tien" required readonly>
         </div>
         
         <!-- Chi tiết thanh toán -->
         <div id="payment-details-summary" class="payment-details" style="display:none;">
             <p><strong>Số phòng:</strong> <span id="summary-so-phong"></span></p>
-            <p><strong>Giá phòng:</strong> <span id="summary-gia-phong"></span></p>
+            <p><strong>Giá phòng (đã thanh toán):</strong> <span id="summary-gia-phong"></span></p>
             <p><strong>Tiền dịch vụ:</strong> <span id="summary-tien-dv"></span></p>
             <p><strong>Tổng cộng:</strong> <span id="summary-tong-cong"></span></p>
         </div>
@@ -179,22 +181,22 @@
         const priceInput = document.getElementById('so_tien');
         const idDatphongInput = document.getElementById('id_datphong');
         const summaryDiv = document.getElementById('payment-details-summary');
-        
         const selectedOption = selectElement.options[selectElement.selectedIndex];
-        
         if (selectedOption.value) {
             const soPhong = selectedOption.getAttribute('data-so-phong');
             const giaPhong = selectedOption.getAttribute('data-gia-phong');
             const tienDV = selectedOption.getAttribute('data-tien-dv');
             const totalPrice = selectedOption.getAttribute('data-total-price');
             const idDatphong = selectedOption.getAttribute('data-id-datphong');
-            
-            priceInput.value = formatCurrency(totalPrice);
+            const soNgay = selectedOption.getAttribute('data-so-ngay');
+
+            // Số tiền phải trả chỉ là tiền dịch vụ
+            priceInput.value = formatCurrency(tienDV);
             idDatphongInput.value = idDatphong;
 
             summaryDiv.style.display = 'block';
             document.getElementById('summary-so-phong').textContent = soPhong;
-            document.getElementById('summary-gia-phong').textContent = formatCurrency(giaPhong);
+            document.getElementById('summary-gia-phong').textContent = formatCurrency(giaPhong) + (soNgay ? ` (${soNgay} ngày)` : '') + ' (đã thanh toán)';
             document.getElementById('summary-tien-dv').textContent = formatCurrency(tienDV);
             document.getElementById('summary-tong-cong').textContent = formatCurrency(totalPrice);
         } else {

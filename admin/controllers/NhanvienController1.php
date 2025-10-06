@@ -52,11 +52,6 @@ class NhanvienController1 {
                 die("<script>alert('Bạn không có quyền thực hiện thao tác này!');window.location='index.php?controller=nhanvien&action=index';</script>");
             }
 
-            // Kiểm tra ID tài khoản tồn tại & role = NHANVIEN
-            if (!$this->model->validateTaiKhoanNhanvien($data['tai_khoan_nhanvien_id'])) {
-                die("<script>alert('❌ ID tài khoản không tồn tại hoặc không phải là NHÂN VIÊN!');window.location='index.php?controller=nhanvien&action=index';</script>");
-            }
-
             // Thêm hoặc cập nhật
             if (isset($_POST['them'])) {
                 $result = $this->model->create($data);

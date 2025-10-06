@@ -11,6 +11,12 @@ class Dichvu {
         $this->conn = $pdo;
     }
 
+    // ✅ Hàm kiểm tra tên dịch vụ hợp lệ (chỉ chữ cái + khoảng trắng)
+    private function isValidName($name) {
+        // Cho phép chữ cái (cả có dấu) và khoảng trắng
+        return preg_match('/^[\p{L}\s]+$/u', $name);
+    }
+
     // Lấy tất cả dịch vụ, có thể search
     public function getAll($search = '') {
         $sql = "SELECT * FROM `$this->table`";
@@ -35,6 +41,10 @@ class Dichvu {
 
     // Thêm dịch vụ
     public function add($data) {
+        if (!$this->isValidName($data[$this->name_col])) {
+            throw new Exception("Tên dịch vụ chỉ được chứa chữ cái và khoảng trắng!");
+        }
+
         $sql = "INSERT INTO `$this->table` (`$this->name_col`, `$this->price_col`, `$this->desc_col`) 
                 VALUES (:ten, :gia, :mota)";
         $stmt = $this->conn->prepare($sql);
@@ -48,6 +58,10 @@ class Dichvu {
 
     // Cập nhật dịch vụ
     public function update($id, $data) {
+        if (!$this->isValidName($data[$this->name_col])) {
+            throw new Exception("Tên dịch vụ không được có ký tự đặc biệt!");
+        }
+
         $sql = "UPDATE `$this->table` 
                 SET `$this->name_col` = :ten, `$this->price_col` = :gia, `$this->desc_col` = :mota 
                 WHERE `$this->id_col` = :id";

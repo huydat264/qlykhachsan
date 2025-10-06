@@ -35,30 +35,43 @@ public function getAll($search = '') {
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
-    // Validate số điện thoại
-    private function validatePhone($phone) {
-        return preg_match('/^[0-9]{9,15}$/', $phone);
+    // Validate số điện thoại (10 hoặc 11 chữ số)
+private function validatePhone($phone) {
+    return preg_match('/^[0-9]{10,11}$/', $phone);
+}
+
+
+    // Validate họ tên (chỉ chữ cái + khoảng trắng, có dấu tiếng Việt)
+    private function validateHoTen($ho_ten) {
+        return preg_match("/^[\p{L}\s]+$/u", $ho_ten);
     }
 
-    // Validate email
-    private function validateEmail($email) {
-        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-    }
-
-    // Validate chức vụ (không được bỏ trống)
+    // Validate chức vụ (chỉ chữ cái + khoảng trắng, có dấu tiếng Việt)
     private function validateChucVu($chuc_vu) {
-        return !empty(trim($chuc_vu));
+        return preg_match("/^[\p{L}\s]+$/u", $chuc_vu);
     }
 
     // Validate lương cơ bản (≥0)
     private function validateLuong($luong) {
         return is_numeric($luong) && $luong >= 0;
     }
+// Validate email
+private function validateEmail($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
 
     // Thêm nhân viên
     public function create($data) {
         if (!$this->validateTaiKhoanNhanvien($data['tai_khoan_nhanvien_id'])) {
             $_SESSION['error'] = "❌ ID tài khoản không tồn tại hoặc không phải là NHÂN VIÊN!";
+            return false;
+        }
+        if (!$this->validateHoTen($data['ho_ten'])) {
+            $_SESSION['error'] = "❌ Họ tên không hợp lệ! Chỉ được chứa chữ cái và khoảng trắng.";
+            return false;
+        }
+        if (!$this->validateChucVu($data['chuc_vu'])) {
+            $_SESSION['error'] = "❌ Chức vụ không hợp lệ! Chỉ được chứa chữ cái và khoảng trắng.";
             return false;
         }
         if (!$this->validatePhone($data['so_dien_thoai'])) {
@@ -67,10 +80,6 @@ public function getAll($search = '') {
         }
         if (!$this->validateEmail($data['email'])) {
             $_SESSION['error'] = "❌ Email không hợp lệ!";
-            return false;
-        }
-        if (!$this->validateChucVu($data['chuc_vu'])) {
-            $_SESSION['error'] = "❌ Chức vụ không được bỏ trống!";
             return false;
         }
         if (!$this->validateLuong($data['luong_co_ban'])) {
@@ -99,16 +108,20 @@ public function getAll($search = '') {
             $_SESSION['error'] = "❌ ID tài khoản không tồn tại hoặc không phải là NHÂN VIÊN!";
             return false;
         }
+        if (!$this->validateHoTen($data['ho_ten'])) {
+            $_SESSION['error'] = "❌ Họ tên không hợp lệ! Chỉ được chứa chữ cái và khoảng trắng.";
+            return false;
+        }
+        if (!$this->validateChucVu($data['chuc_vu'])) {
+            $_SESSION['error'] = "❌ Chức vụ không hợp lệ! Chỉ được chứa chữ cái và khoảng trắng.";
+            return false;
+        }
         if (!$this->validatePhone($data['so_dien_thoai'])) {
             $_SESSION['error'] = "❌ Số điện thoại không hợp lệ!";
             return false;
         }
         if (!$this->validateEmail($data['email'])) {
             $_SESSION['error'] = "❌ Email không hợp lệ!";
-            return false;
-        }
-        if (!$this->validateChucVu($data['chuc_vu'])) {
-            $_SESSION['error'] = "❌ Chức vụ không được bỏ trống!";
             return false;
         }
         if (!$this->validateLuong($data['luong_co_ban'])) {
