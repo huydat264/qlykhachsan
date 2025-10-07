@@ -14,9 +14,8 @@ class Phong {
         $params = [];
 
         if (!empty($search)) {
-            $where = "WHERE Phong.so_phong LIKE :search 
-                      OR Phong.loai_phong LIKE :search 
-                      OR KhachHang.ho_ten LIKE :search";
+            $where = "WHERE p.so_phong LIKE :search 
+                      OR p.loai_phong LIKE :search ";
             $params[':search'] = "%$search%";
         }
 

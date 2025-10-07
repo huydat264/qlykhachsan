@@ -208,6 +208,7 @@
 <main class="container">
     <h2 class="main-title">Quản lý Đặt phòng</h2>
 
+    <?php $today = date('Y-m-d'); ?>
     <?php if ($editData): ?>
     <?php
         $phongOptions = array_merge([$editData], $phongTrong);
@@ -228,18 +229,19 @@
                     <select name="id_phong" required>
                         <?php foreach ($phongOptions as $phong): 
                             $selected = ($editData['id_phong'] == $phong['id_phong']) ? 'selected' : '';
+                            $loai_phong = isset($phong['loai_phong']) ? $phong['loai_phong'] : '';
                         ?>
-                            <option value="<?= $phong['id_phong'] ?>" <?= $selected ?>>Phòng <?= $phong['so_phong'] ?> - <?= $phong['loai_phong'] ?></option>
+                            <option value="<?= $phong['id_phong'] ?>" <?= $selected ?>>Phòng <?= $phong['so_phong'] ?> - <?= $loai_phong ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div>
                     <label for="edit_ngay_nhan">Ngày nhận:</label>
-                    <input type="date" id="edit_ngay_nhan" name="ngay_nhan" value="<?= htmlspecialchars($editData['ngay_nhan']) ?>" required>
+                    <input type="date" id="edit_ngay_nhan" name="ngay_nhan" value="<?= htmlspecialchars($editData['ngay_nhan']) ?>" required min="<?= $today ?>">
                 </div>
                 <div>
                     <label for="edit_ngay_tra">Ngày trả:</label>
-                    <input type="date" id="edit_ngay_tra" name="ngay_tra" value="<?= htmlspecialchars($editData['ngay_tra']) ?>" required>
+                    <input type="date" id="edit_ngay_tra" name="ngay_tra" value="<?= htmlspecialchars($editData['ngay_tra']) ?>" required min="<?= $today ?>">
                 </div>
             </div>
             <div class="form-row">
@@ -308,9 +310,9 @@
         </div>
         <div class="form-row">
             <label for="ngay_nhan">Ngày nhận phòng:</label>
-            <input type="date" id="ngay_nhan" name="ngay_nhan" required>
+            <input type="date" id="ngay_nhan" name="ngay_nhan" required min="<?= $today ?>">
             <label for="ngay_tra">Ngày trả phòng:</label>
-            <input type="date" id="ngay_tra" name="ngay_tra" required>
+            <input type="date" id="ngay_tra" name="ngay_tra" required min="<?= $today ?>">
         </div>
         <div class="form-actions">
             <button type="submit" name="dat_phong"><i class="fas fa-calendar-check"></i> Đặt phòng</button>
@@ -370,10 +372,10 @@
 </div>
 
 <script>
+// Tự động fill thông tin khách hàng
 document.getElementById('chon_khachhang').addEventListener('change', function() {
     const selected = this.options[this.selectedIndex];
     const info = selected.getAttribute('data-info');
-    
     if (info) {
         const kh = JSON.parse(info);
         document.getElementById('ho_ten').value = kh.ho_ten;
@@ -384,13 +386,43 @@ document.getElementById('chon_khachhang').addEventListener('change', function() 
         document.getElementById('email').value = kh.email;
         document.getElementById('dia_chi').value = kh.dia_chi;
     } else {
-        // Clear nếu chọn "Khách hàng mới"
         document.querySelectorAll('#ho_ten,#cccd,#ngay_sinh,#gioi_tinh,#so_dien_thoai,#email,#dia_chi')
             .forEach(el => el.value = '');
     }
 });
 
+// Đảm bảo ngày trả > ngày nhận và ngày nhận không được nhỏ hơn hôm nay (theo trình duyệt)
+function setMinDateInputs() {
+    var today = new Date();
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth() + 1).padStart(2, '0');
+    var dd = String(today.getDate()).padStart(2, '0');
+    var todayStr = yyyy + '-' + mm + '-' + dd;
+    var nhan = document.getElementById('ngay_nhan');
+    var tra = document.getElementById('ngay_tra');
+    if (nhan) nhan.min = todayStr;
+    if (tra) tra.min = nhan && nhan.value ? nhan.value : todayStr;
+}
+var nhanInput = document.getElementById('ngay_nhan');
+var traInput = document.getElementById('ngay_tra');
+if (nhanInput && traInput) {
+    nhanInput.addEventListener('change', setMinDateInputs);
+    setMinDateInputs();
+}
 
+// Kiểm tra khi submit form
+var datphongForm = document.getElementById('datphong-form');
+if (datphongForm) {
+    datphongForm.addEventListener('submit', function(e) {
+        var nhan = nhanInput.value;
+        var tra = traInput.value;
+        if (!nhan || !tra) return;
+        if (tra <= nhan) {
+            alert('Ngày trả phải sau ngày nhận!');
+            e.preventDefault();
+        }
+    });
+}
 </script>
 <!-- Thư viện SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
