@@ -85,14 +85,14 @@ $nhanVienCounts   = array_column($nhanVienByRole ?? [], 'total');
         </div>
         <div class="bg-blue-800 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
             <div class="bg-white bg-opacity-20 rounded-full p-3 mb-2"><i class="ri-wallet-line text-2xl"></i></div>
-            <h3 class="text-lg font-semibold">Tổng doanh thu thực tế</h3>
+            <h3 class="text-lg font-semibold">Tổng doanh thu Dịch Vụ</h3>
             <p class="text-3xl lg:text-4xl font-bold mt-1"><?= number_format($doanhThuThucTe,0,",",".") ?> VND</p>
         </div>
         <div class="bg-red-700 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center text-center hover:scale-105 transition-transform">
     <div class="bg-white bg-opacity-20 rounded-full p-3 mb-2">
         <i class="ri-money-dollar-circle-line text-2xl"></i>
     </div>
-    <h3 class="text-lg font-semibold">Tổng chi tiêu</h3>
+    <h3 class="text-lg font-semibold">Tổng Doanh Thu</h3>
     <p class="text-3xl lg:text-4xl font-bold mt-1">
         <?= number_format($tongChiTieu, 0, ',', '.') ?> VND
     </p>

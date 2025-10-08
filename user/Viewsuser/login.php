@@ -1,5 +1,5 @@
 <?php
-session_start(); // 👈 thêm dòng này ở ngay đầu
+if (session_status() === PHP_SESSION_NONE) session_start();
 
 ?>
 <!DOCTYPE html>
